@@ -4,8 +4,8 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    /*border: 1px solid rgb(225, 225, 225);*/
 }
+
 body {
     font-family: Arial, sans-serif;
     line-height: 1.6;
@@ -21,27 +21,31 @@ body {
     background-color: #fff;
     border-radius: 8px;
 }
+
 h1 {
     text-align: center;
     margin-bottom: 1rem;
     background-color: #faf8f8;
     border-radius: 5px;
-    color: rgb(7, 7, 98)
+    color: rgb(7, 7, 98);
 }
+
 h2 {
     margin-bottom: 0.5rem;
     display: inline-block;
 }
+
 input[type="text"] {
     padding: 0.5rem;
     border: 1px solid #e8e8e8;
     border-radius: 4px;
     font-size: 1rem;
 }
+
 input,
 button,
 textarea {
-  font-size: 16px;
+    font-size: 16px;
 }
 
 .rayon {
@@ -51,43 +55,49 @@ textarea {
     margin-bottom: 1.5rem;
     background-color: #fafafa;
 }
+
 .add-rayon {
     display: flex;
     justify-content: center;
     margin-bottom: 1rem;
     gap: 0.5rem;
 }
+
 .rayon-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
+
 .btn-modifier-rayon,
-.btn-supprimer-rayon{
+.btn-supprimer-rayon,
+#btn-ajouter-rayon {
     border: none;
     border-radius: 4px;
 }
-#btn-ajouter-rayon {
-    border: none;
-}
+
 .btn-deplacer-produit {
     border: 1px solid #ccc;
     font-size: 1.2rem;
 }
+
 .produit {
     display: flex;
     padding: 0.5rem 0;
     border-bottom: 1px solid #eee;
 }
+
 .produit-nom {
     font-size: 1rem;
     margin-left: 5px;
 }
+
 .produit-actions {
     margin-left: auto;
     display: flex;
     gap: 0.25rem;
 }
+
 .produit-actions button {
     font-size: 0.75rem;
     padding: 0.15rem 0.4rem;
@@ -95,38 +105,51 @@ textarea {
     border: none;
     border-radius: 4px;
 }
+
 .produit-coche {
     opacity: 0.5;
     text-decoration: line-through;
 }
+
 button {
     cursor: pointer;
     padding: 0.3rem 0.6rem;
     border-radius: 4px;
 }
+
 .btn-ajouter-produit {
     margin-left: 0.5rem;
     border: none;
 }
+
 .rayon-footer {
     display: flex;
     gap: 0.5rem;
     margin-top: 1rem;
 }
+
 button.btn-deplacer-produit {
     margin-left: auto;
     border: none;
 }
+
 button.btn-deplacer-produit:hover {
     cursor: grab;
 }
+
 button.btn-deplacer-produit:active {
     cursor: grabbing;
 }
 
+/* Placeholder pour drag tactile */
+.rayon-placeholder {
+    background-color: #ddd;
+    border: 2px dashed #aaa;
+    margin-bottom: 1.5rem;
+    border-radius: 5px;
+}
 
-/* media queries----------------------
-------------------------------------*/
+/* Media queries */
 @media (max-width: 430px) {
     .container {
         padding: 0.5rem;
@@ -143,26 +166,4 @@ button.btn-deplacer-produit:active {
     .produit-nom {
         font-size: 0.9rem;
     }
-}
-
-/* =========================
-   MOBILE TOUCH & IOS FIXES
-========================= */
-
-/* Empêche zoom automatique iOS sur input */
-input, textarea, select {
-    font-size: 16px; /* déjà ok dans ton CSS */
-}
-
-/* Empêche sélection texte pendant drag */
-body, .rayon, .produit {
-    -webkit-user-select: none; /* iOS */
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-
-/* Permet une manipulation tactile correcte pour le drag */
-.rayon {
-    touch-action: manipulation;
 }

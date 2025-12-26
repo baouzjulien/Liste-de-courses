@@ -1,6 +1,7 @@
 /* =========================
    RÉFÉRENCES DOM PRINCIPALES
 ========================= */
+
 const rayonsContainer = document.getElementById('rayons-container');
 const ajouterRayonBtn = document.getElementById('btn-ajouter-rayon');
 const nomRayonInput = document.getElementById('nouveau-rayon');
@@ -8,13 +9,19 @@ const nomRayonInput = document.getElementById('nouveau-rayon');
 /* =========================
    AJOUT RAYON
 ========================= */
+
 nomRayonInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') ajouterRayonBtn.click();
+    if (e.key === 'Enter') {
+        ajouterRayonBtn.click();
+    }
 });
 
 ajouterRayonBtn.addEventListener('click', () => {
     const nomRayon = nomRayonInput.value.trim();
-    if (!nomRayon) return alert('Veuillez entrer un nom de rayon valide.');
+    if (!nomRayon) {
+        alert('Veuillez entrer un nom de rayon valide.');
+        return;
+    }
     const rayon = createRayon(nomRayon);
     rayonsContainer.appendChild(rayon);
     nomRayonInput.value = '';
@@ -23,10 +30,12 @@ ajouterRayonBtn.addEventListener('click', () => {
 /* =========================
    CRÉATION D’UN RAYON
 ========================= */
+
 function createRayon(nomRayon) {
     const rayon = document.createElement('div');
     rayon.className = 'rayon';
     rayon.setAttribute('draggable', 'true');
+
     rayon.innerHTML = `
         <div class="rayon-header">
             <h2>${nomRayon}</h2>
@@ -35,7 +44,9 @@ function createRayon(nomRayon) {
                 <button class="btn-supprimer-rayon">❌</button>
             </div>
         </div>
+
         <div class="produits-container"></div>
+
         <div class="rayon-footer">
             <input type="text" class="nouveau-produit" placeholder="Ajout produit">
             <button class="btn-ajouter-produit">➕</button>
@@ -45,12 +56,14 @@ function createRayon(nomRayon) {
 
     initRayonActions(rayon);
     initTouchDrag(rayon);
+
     return rayon;
 }
 
 /* =========================
-   EVENTS RAYON
+   EVENTS D’UN RAYON
 ========================= */
+
 function initRayonActions(rayon) {
     const btnSupprimer = rayon.querySelector('.btn-supprimer-rayon');
     const btnModifier = rayon.querySelector('.btn-modifier-rayon');
@@ -60,6 +73,7 @@ function initRayonActions(rayon) {
     const titre = rayon.querySelector('h2');
 
     btnSupprimer.addEventListener('click', () => rayon.remove());
+
     btnModifier.addEventListener('click', () => {
         const nouveauNom = prompt('Entrez le nouveau nom du rayon:', titre.textContent);
         if (nouveauNom) titre.textContent = nouveauNom;
@@ -71,7 +85,10 @@ function initRayonActions(rayon) {
 
     btnAjouterProduit.addEventListener('click', () => {
         const nomProduit = inputProduit.value.trim();
-        if (!nomProduit) return alert('Veuillez entrer un nom de produit valide.');
+        if (!nomProduit) {
+            alert('Veuillez entrer un nom de produit valide.');
+            return;
+        }
         addProduit(produitsContainer, nomProduit);
         inputProduit.value = '';
     });
@@ -80,6 +97,7 @@ function initRayonActions(rayon) {
 /* =========================
    PRODUITS
 ========================= */
+
 function addProduit(container, nomProduit) {
     const produit = document.createElement('div');
     produit.className = 'produit';
@@ -121,6 +139,7 @@ function initProduitActions(produit, container) {
 /* =========================
    DRAG & DROP (RAYONS)
 ========================= */
+
 let draggedRayon = null;
 
 rayonsContainer.addEventListener('dragstart', (e) => {
@@ -129,15 +148,18 @@ rayonsContainer.addEventListener('dragstart', (e) => {
         draggedRayon.classList.add('dragging');
     }
 });
+
 rayonsContainer.addEventListener('dragend', () => {
-    if (!draggedRayon) return;
-    draggedRayon.classList.remove('dragging');
-    draggedRayon = null;
+    if (draggedRayon) {
+        draggedRayon.classList.remove('dragging');
+        draggedRayon = null;
+    }
 });
+
 rayonsContainer.addEventListener('dragover', (e) => {
     e.preventDefault();
     const afterElement = getDragAfterElement(rayonsContainer, e.clientY);
-    if (afterElement == null) rayonsContainer.appendChild(draggedRayon);
+    if (!afterElement) rayonsContainer.appendChild(draggedRayon);
     else rayonsContainer.insertBefore(draggedRayon, afterElement);
 });
 
@@ -146,42 +168,51 @@ function getDragAfterElement(container, y) {
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
         const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
-        return closest;
+        if (offset < 0 && offset > closest.offset) return { offset, element: child };
+        else return closest;
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 /* =========================
-   TOUCH DRAG POUR MOBILE IOS/ANDROID
+   DRAG TACTILE AVEC PLACEHOLDER
 ========================= */
+
 function initTouchDrag(rayon) {
-    let startY = 0;
+    const btnDeplacer = rayon.querySelector('.btn-deplacer-produit');
+    if (!btnDeplacer) return;
+
     let placeholder = null;
 
-    rayon.addEventListener('touchstart', (e) => {
+    btnDeplacer.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 1) return;
-        startY = e.touches[0].clientY;
+
         rayon.classList.add('dragging');
 
-        // Création d’un placeholder pour éviter jump
         placeholder = document.createElement('div');
         placeholder.className = 'rayon-placeholder';
         placeholder.style.height = rayon.offsetHeight + 'px';
-        rayon.parentNode.insertBefore(placeholder, rayon.nextSibling);
+        placeholder.style.backgroundColor = '#ddd';
+        placeholder.style.border = '2px dashed #aaa';
+        placeholder.style.marginBottom = '1.5rem';
+        placeholder.style.borderRadius = '5px';
 
+        rayon.parentNode.insertBefore(placeholder, rayon.nextSibling);
         e.preventDefault();
     }, { passive: false });
 
-    rayon.addEventListener('touchmove', (e) => {
+    btnDeplacer.addEventListener('touchmove', (e) => {
         if (!placeholder) return;
+
         const touchY = e.touches[0].clientY;
         const afterElement = getDragAfterElement(rayonsContainer, touchY);
+
         if (!afterElement) rayonsContainer.appendChild(rayon);
         else rayonsContainer.insertBefore(rayon, afterElement);
+
         e.preventDefault();
     }, { passive: false });
 
-    rayon.addEventListener('touchend', () => {
+    btnDeplacer.addEventListener('touchend', () => {
         if (!placeholder) return;
         rayon.classList.remove('dragging');
         placeholder.remove();

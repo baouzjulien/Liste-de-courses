@@ -75,7 +75,7 @@ function createRayon(nomRayon) {
         <div class="rayon-footer">
             <input type="text" class="nouveau-produit" placeholder="Ajout produit">
             <button class="btn-ajouter-produit">➕</button>
-            <button class="btn-deplacer-produit">🤚</button>
+            <button class="btn-deplacer-produit">↕️</button>
         </div>
     `;
 

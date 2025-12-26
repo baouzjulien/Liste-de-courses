@@ -168,12 +168,16 @@ button.btn-deplacer-produit:active {
     }
     .btn-ajouter-produit,
     .btn-deplacer-produit {
-        font-size: 0.7rem;
+        font-size: 0.8rem;
     }
     .rayon-footer {
         display: flex;
-        gap: 0.3rem;
-        margin-top: 1rem;
-        flex-wrap: wrap;
+        flex-direction: column;
+    }
+    button.btn-deplacer-produit {
+    margin-left: 0;
+    }
+    button.btn-ajouter-produit {
+    margin-left: 0;
     }
 }

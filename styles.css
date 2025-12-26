@@ -168,7 +168,6 @@ button.btn-deplacer-produit:active {
     }
     .btn-ajouter-produit,
     .btn-deplacer-produit {
-        font-size: 0.75rem;
-        padding: 0.15rem 0.3rem;
+        font-size: 0.7rem;
     }
 }

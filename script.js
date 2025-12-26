@@ -303,9 +303,8 @@ function initTouchDrag(rayon) {
         e.preventDefault();
     }, { passive: false });
 
-    rayon.addEventListener('touchend', () => {
+     btnDeplacer.addEventListener('touchend', () => {
         if (!touchDraggedRayon) return;
-
         touchDraggedRayon.classList.remove('dragging');
         touchDraggedRayon = null;
     });

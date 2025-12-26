@@ -171,7 +171,9 @@ button.btn-deplacer-produit:active {
         font-size: 0.7rem;
     }
     .rayon-footer {
-        flex-direction: row;
-        align-items: center;
+        display: flex;
+        gap: 0.3rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
     }
 }

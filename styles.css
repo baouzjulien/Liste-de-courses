@@ -62,6 +62,12 @@ textarea {
     justify-content: space-between;
     align-items: center;
 }
+.rayon.dragging {
+    user-select: none; /* Empêche la sélection du texte */
+    -webkit-user-select: none; /* Safari/iOS */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+}
 .btn-modifier-rayon,
 .btn-supprimer-rayon{
     border: none;

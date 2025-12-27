@@ -11,15 +11,14 @@ body {
     line-height: 1.6;
     background-color: #f4f4f4;
     color: #333;
-    padding: 20px;
+    padding: 0px;;
 }
 
 .container {
     max-width: 600px;
-    margin: 2rem auto;
+    margin: auto;
     padding: 1rem;
     background-color: #fff;
-    border-radius: 8px;
 }
 
 h1 {

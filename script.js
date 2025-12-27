@@ -305,5 +305,3 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.log('Service Worker erreur', err));
   });
 }
-
-

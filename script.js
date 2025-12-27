@@ -294,3 +294,16 @@ function loadFromLocalStorage() {
 
 document.addEventListener('DOMContentLoaded', loadFromLocalStorage);
 
+/* =============================
+   Gestion PWA - Service Worker
+============================= */
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker enregistré', reg))
+      .catch(err => console.log('Service Worker erreur', err));
+  });
+}
+
+

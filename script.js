@@ -72,8 +72,11 @@ function initRayonActions(rayon) {
     const produitsContainer = rayon.querySelector('.produits-container');
     const titre = rayon.querySelector('h2');
 
-    btnSupprimer.addEventListener('click', () => rayon.remove());
-    saveToLocalStorage();
+    btnSupprimer.addEventListener('click', () => {
+        rayon.remove();
+        saveToLocalStorage();
+});
+    
     btnModifier.addEventListener('click', () => {
         const nouveauNom = prompt('Entrez le nouveau nom du rayon:', titre.textContent);
         if (nouveauNom) titre.textContent = nouveauNom;
@@ -135,8 +138,10 @@ function initProduitActions(produit, container) {
     const btnModifier = produit.querySelector('.btn-modifier-produit');
     const nom = produit.querySelector('.produit-nom');
 
-    btnSupprimer.addEventListener('click', () => produit.remove());
-    saveToLocalStorage();
+    btnSupprimer.addEventListener('click', () => {
+        produit.remove()
+        saveToLocalStorage();
+    });
     btnModifier.addEventListener('click', () => {
         const nouveauNom = prompt('Entrez le nouveau nom du produit:', nom.textContent);
         if (nouveauNom) nom.textContent = nouveauNom;

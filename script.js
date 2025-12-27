@@ -65,6 +65,7 @@ function createRayon(nomRayon) {
 function initRayonActions(rayon) {
     const btnSupprimer = rayon.querySelector('.btn-supprimer-rayon');
     const btnModifier = rayon.querySelector('.btn-modifier-rayon');
+    const btnDeplacer = rayon.querySelector('.btn-deplacer-produit');
     const btnAjouterProduit = rayon.querySelector('.btn-ajouter-produit');
     const inputProduit = rayon.querySelector('.nouveau-produit');
     const produitsContainer = rayon.querySelector('.produits-container');
@@ -89,6 +90,20 @@ function initRayonActions(rayon) {
         addProduit(produitsContainer, nomProduit);
         inputProduit.value = '';
     });
+    
+
+    btnDeplacer.addEventListener('mousedown', () => {
+            rayon.setAttribute('draggable', 'true');
+    });
+
+    btnDeplacer.addEventListener('mouseup', () => {
+            rayon.removeAttribute('draggable');
+    });
+
+    btnDeplacer.addEventListener('mouseleave', () => {
+            rayon.removeAttribute('draggable');
+    });
+
 }
 
 /* =========================
@@ -140,24 +155,27 @@ function initProduitActions(produit, container) {
 let draggedRayon = null;
 
 rayonsContainer.addEventListener('dragstart', (e) => {
-    if (e.target.classList.contains('rayon')) {
-        draggedRayon = e.target;
-        draggedRayon.classList.add('dragging');
-    }
+    if (!e.target.classList.contains('rayon')) return;
+    draggedRayon = e.target;
+    draggedRayon.classList.add('dragging');
 });
 
 rayonsContainer.addEventListener('dragend', () => {
-    if (draggedRayon) {
-        draggedRayon.classList.remove('dragging');
-        draggedRayon = null;
-    }
+    if (!draggedRayon) return;
+    draggedRayon.classList.remove('dragging');
+    draggedRayon = null;
 });
 
 rayonsContainer.addEventListener('dragover', (e) => {
     e.preventDefault();
+    if (!draggedRayon) return;
+
     const afterElement = getDragAfterElement(rayonsContainer, e.clientY);
-    if (!afterElement) rayonsContainer.appendChild(draggedRayon);
-    else rayonsContainer.insertBefore(draggedRayon, afterElement);
+    if (!afterElement) {
+        rayonsContainer.appendChild(draggedRayon);
+    } else {
+        rayonsContainer.insertBefore(draggedRayon, afterElement);
+    }
 });
 
 function getDragAfterElement(container, y) {
@@ -178,61 +196,36 @@ function initTouchDrag(rayon) {
     const btnDeplacer = rayon.querySelector('.btn-deplacer-produit');
     if (!btnDeplacer) return;
 
-    let placeholder = null;
-    let startY = 0;
-    let offsetY = 0;
+    let isDragging = false;
 
     btnDeplacer.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 1) return;
 
-        const rect = rayon.getBoundingClientRect();
-        startY = e.touches[0].clientY;
-        offsetY = startY - rect.top;
-
-        // Crée le placeholder
-        placeholder = document.createElement('div');
-        placeholder.className = 'rayon-placeholder';
-        placeholder.style.height = rect.height + 'px';
-        rayon.parentNode.insertBefore(placeholder, rayon.nextSibling);
-
-        // Passe le rayon en position absolue
-        rayon.style.position = 'absolute';
-        rayon.style.width = rect.width + 'px';
-        rayon.style.top = rect.top + 'px';
-        rayon.style.left = rect.left + 'px';
-        rayon.style.zIndex = '1000';
-        rayon.style.transition = 'none';
+        isDragging = true;
         rayon.classList.add('dragging');
 
         e.preventDefault();
     }, { passive: false });
 
     btnDeplacer.addEventListener('touchmove', (e) => {
-        if (!placeholder) return;
+        if (!isDragging) return;
 
         const touchY = e.touches[0].clientY;
-        rayon.style.top = (touchY - offsetY) + 'px';
-
         const afterElement = getDragAfterElement(rayonsContainer, touchY);
-        if (!afterElement) rayonsContainer.appendChild(placeholder);
-        else rayonsContainer.insertBefore(placeholder, afterElement);
+
+        if (!afterElement) {
+            rayonsContainer.appendChild(rayon);
+        } else {
+            rayonsContainer.insertBefore(rayon, afterElement);
+        }
 
         e.preventDefault();
     }, { passive: false });
 
     btnDeplacer.addEventListener('touchend', () => {
-        if (!placeholder) return;
+        if (!isDragging) return;
 
-        rayon.style.position = '';
-        rayon.style.width = '';
-        rayon.style.top = '';
-        rayon.style.left = '';
-        rayon.style.zIndex = '';
-        rayon.style.transition = '';
+        isDragging = false;
         rayon.classList.remove('dragging');
-
-        placeholder.parentNode.insertBefore(rayon, placeholder);
-        placeholder.remove();
-        placeholder = null;
     });
 }

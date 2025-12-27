@@ -74,10 +74,14 @@ textarea {
     border: none;
     border-radius: 4px;
 }
-
+.rayon.dragging {
+    opacity: 0.6;
+    transform: scale(0.97);
+}
 .btn-deplacer-produit {
     border: 1px solid #ccc;
     font-size: 1.2rem;
+    touch-action: none;
 }
 
 .produit {

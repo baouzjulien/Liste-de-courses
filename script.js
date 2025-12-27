@@ -1,307 +1,257 @@
-/* =========================
-   RÉFÉRENCES DOM PRINCIPALES
-========================= */
-
 const rayonsContainer = document.getElementById('rayons-container');
 const ajouterRayonBtn = document.getElementById('btn-ajouter-rayon');
 const nomRayonInput = document.getElementById('nouveau-rayon');
 
-/* =========================
-   AJOUT RAYON
-========================= */
-
-nomRayonInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') ajouterRayonBtn.click();
-});
-
+/* --- AJOUT RAYON --- */
 ajouterRayonBtn.addEventListener('click', () => {
-    const nomRayon = nomRayonInput.value.trim();
-    if (!nomRayon) {
-        alert('Veuillez entrer un nom de rayon valide.');
-        return;
-    }
-    const rayon = createRayon(nomRayon);
-    rayonsContainer.appendChild(rayon);
-    saveToLocalStorage();
-    nomRayonInput.value = '';
+  const nom = nomRayonInput.value.trim();
+  if(!nom) return;
+  rayonsContainer.appendChild(createRayon(nom));
+  nomRayonInput.value='';
+  save();
 });
+nomRayonInput.addEventListener('keydown', e => { if(e.key==='Enter') ajouterRayonBtn.click(); });
 
-/* =========================
-   CRÉATION D’UN RAYON
-========================= */
+/* --- CREATE RAYON --- */
+function createRayon(nom){
+  const rayon = document.createElement('div');
+  rayon.className='rayon';
+  rayon.setAttribute('draggable','true');
 
-function createRayon(nomRayon) {
-    const rayon = document.createElement('div');
-    rayon.className = 'rayon';
-    rayon.setAttribute('draggable', 'true');
-
-    rayon.innerHTML = `
-        <div class="rayon-header">
-            <h2>${nomRayon}</h2>
-            <div class="rayon-actions">
-                <button class="btn-modifier-rayon">🖋️</button>
-                <button class="btn-supprimer-rayon">❌</button>
-            </div>
-        </div>
-
-        <div class="produits-container"></div>
-
-        <div class="rayon-footer">
-            <input type="text" class="nouveau-produit" placeholder="Ajout produit">
-            <button class="btn-ajouter-produit">➕</button>
-            <button class="btn-deplacer-produit">Déplacer</button>
-        </div>
-    `;
-
-    initRayonActions(rayon);
-    initTouchDrag(rayon);
-
-    return rayon;
+  rayon.innerHTML = `
+    <div class="rayon-header">
+      <button class="btn-deplacer-rayon">☰</button>
+      <h2>${nom} <span class="arrow">▾</span></h2>
+      <div class="rayon-actions">
+        <button class="btn-modifier-rayon">🖋️</button>
+        <button class="btn-supprimer-rayon">❌</button>
+      </div>
+    </div>
+    <div class="produits-container"></div>
+    <div class="rayon-footer">
+      <input type="text" class="nouveau-produit" placeholder="Ajouter un produit">
+      <button class="btn-ajouter-produit">➕</button>
+    </div>
+  `;
+  initRayonActions(rayon);
+  initTouchDrag(rayon);
+  return rayon;
 }
 
-/* =========================
-   EVENTS D’UN RAYON
-========================= */
+/* --- ACTIONS RAYON --- */
+function initRayonActions(rayon){
+  const header = rayon.querySelector('.rayon-header');
+  const btnSup = rayon.querySelector('.btn-supprimer-rayon');
+  const btnMod = rayon.querySelector('.btn-modifier-rayon');
+  const btnDrag = rayon.querySelector('.btn-deplacer-rayon');
+  const inputProd = rayon.querySelector('.nouveau-produit');
+  const btnAddProd = rayon.querySelector('.btn-ajouter-produit');
+  const contProd = rayon.querySelector('.produits-container');
 
-function initRayonActions(rayon) {
-    const btnSupprimer = rayon.querySelector('.btn-supprimer-rayon');
-    const btnModifier = rayon.querySelector('.btn-modifier-rayon');
-    const btnDeplacer = rayon.querySelector('.btn-deplacer-produit');
-    const btnAjouterProduit = rayon.querySelector('.btn-ajouter-produit');
-    const inputProduit = rayon.querySelector('.nouveau-produit');
-    const produitsContainer = rayon.querySelector('.produits-container');
+  // Collapse / expand
+  header.addEventListener('click', e=>{
+    if(e.target.tagName==='BUTTON') return;
+    rayon.classList.toggle('collapsed');
+    save();
+  });
+
+  // Afficher les boutons actions au click (mobile)
+  rayon.addEventListener('click', e=>{
+    if(e.target.tagName==='BUTTON') return;
+    const actions = rayon.querySelector('.rayon-actions');
+    actions.style.display = actions.style.display==='inline-block'?'none':'inline-block';
+  });
+
+  // Supprimer / modifier rayon
+  btnSup.addEventListener('click', ()=>{ rayon.remove(); save(); });
+  btnMod.addEventListener('click', ()=>{
     const titre = rayon.querySelector('h2');
+    const nv = prompt("Nouveau nom:", titre.firstChild.textContent.trim());
+    if(nv) titre.firstChild.textContent = nv + ' ';
+    save();
+  });
 
-    btnSupprimer.addEventListener('click', () => {
-        rayon.remove();
-        saveToLocalStorage();
-});
-    
-    btnModifier.addEventListener('click', () => {
-        const nouveauNom = prompt('Entrez le nouveau nom du rayon:', titre.textContent);
-        if (nouveauNom) titre.textContent = nouveauNom;
-        saveToLocalStorage();
-    });
+  // Ajouter produit
+  btnAddProd.addEventListener('click', ()=>{
+    const val = inputProd.value.trim();
+    if(!val) return;
+    addProduit(contProd,val);
+    inputProd.value='';
+    save();
+  });
+  inputProd.addEventListener('keydown', e=>{ if(e.key==='Enter') btnAddProd.click(); });
 
-    inputProduit.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') btnAjouterProduit.click();
-    });
+  // Drag PC
+  rayon.addEventListener('dragstart', ()=>rayon.classList.add('dragging'));
+  rayon.addEventListener('dragend', ()=>{
+    rayon.classList.remove('dragging');
+    save();
+  });
 
-    btnAjouterProduit.addEventListener('click', () => {
-        const nomProduit = inputProduit.value.trim();
-        if (!nomProduit) {
-            alert('Veuillez entrer un nom de produit valide.');
-            return;
-        }
-        addProduit(produitsContainer, nomProduit);
-        inputProduit.value = '';
-        saveToLocalStorage();
-    });
-    
-
-    btnDeplacer.addEventListener('mousedown', () => {
-            rayon.setAttribute('draggable', 'true');
-    });
-
-    btnDeplacer.addEventListener('mouseup', () => {
-            rayon.removeAttribute('draggable');
-    });
-
-    btnDeplacer.addEventListener('mouseleave', () => {
-            rayon.removeAttribute('draggable');
-    });
-
-}
-
-/* =========================
-   PRODUITS
-========================= */
-
-function addProduit(container, nomProduit) {
-    const produit = document.createElement('div');
-    produit.className = 'produit';
-    produit.innerHTML = `
-        <input type="checkbox" class="produit-checkbox">
-        <span class="produit-nom">${nomProduit}</span>
-        <div class="produit-actions">
-            <button class="btn-modifier-produit">🖋️</button>
-            <button class="btn-supprimer-produit">❌</button>
-        </div>
-    `;
-    initProduitActions(produit, container);
-    container.appendChild(produit);
-}
-
-function initProduitActions(produit, container) {
-    const checkbox = produit.querySelector('.produit-checkbox');
-    const btnSupprimer = produit.querySelector('.btn-supprimer-produit');
-    const btnModifier = produit.querySelector('.btn-modifier-produit');
-    const nom = produit.querySelector('.produit-nom');
-
-    btnSupprimer.addEventListener('click', () => {
-        produit.remove()
-        saveToLocalStorage();
-    });
-    btnModifier.addEventListener('click', () => {
-        const nouveauNom = prompt('Entrez le nouveau nom du produit:', nom.textContent);
-        if (nouveauNom) nom.textContent = nouveauNom;
-        saveToLocalStorage();
-    });
-
-    checkbox.addEventListener('change', () => {
-        if (checkbox.checked) {
-            produit.classList.add('produit-coche');
-            container.appendChild(produit);
-        } else {
-            produit.classList.remove('produit-coche');
-            container.prepend(produit);
-        }
-        saveToLocalStorage();
-    });
-}
-
-/* =========================
-   DRAG & DROP (PC)
-========================= */
-
-let draggedRayon = null;
-
-rayonsContainer.addEventListener('dragstart', (e) => {
-    if (!e.target.classList.contains('rayon')) return;
-    draggedRayon = e.target;
-    draggedRayon.classList.add('dragging');
-});
-
-rayonsContainer.addEventListener('dragend', () => {
-    if (!draggedRayon) return;
-    draggedRayon.classList.remove('dragging');
-    draggedRayon = null;
-    saveToLocalStorage();
-});
-
-rayonsContainer.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    if (!draggedRayon) return;
-
-    const afterElement = getDragAfterElement(rayonsContainer, e.clientY);
-    if (!afterElement) {
-        rayonsContainer.appendChild(draggedRayon);
-    } else {
-        rayonsContainer.insertBefore(draggedRayon, afterElement);
-    }
-});
-
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.rayon:not(.dragging)')];
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) return { offset, element: child };
-        else return closest;
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-/* =========================
-   DRAG TACTILE FLUIDE
-========================= */
-
-function initTouchDrag(rayon) {
-    const btnDeplacer = rayon.querySelector('.btn-deplacer-produit');
-    if (!btnDeplacer) return;
-
-    let isDragging = false;
-
-    btnDeplacer.addEventListener('touchstart', (e) => {
-        if (e.touches.length !== 1) return;
-
-        isDragging = true;
-        rayon.classList.add('dragging');
-
-        e.preventDefault();
-    }, { passive: false });
-
-    btnDeplacer.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-
-        const touchY = e.touches[0].clientY;
-        const afterElement = getDragAfterElement(rayonsContainer, touchY);
-
-        if (!afterElement) {
-            rayonsContainer.appendChild(rayon);
-        } else {
-            rayonsContainer.insertBefore(rayon, afterElement);
-        }
-
-        e.preventDefault();
-    }, { passive: false });
-
-    btnDeplacer.addEventListener('touchend', () => {
-        if (!isDragging) return;
-
-        isDragging = false;
-        rayon.classList.remove('dragging');
-        saveToLocalStorage();
-    });
-}
-
-/* =========================
-   Gestion du localStorage
-========================= */
-
-function saveToLocalStorage() {
-    const data = { rayons: [] };
-
-    document.querySelectorAll('.rayon').forEach(rayon => {
-        const nomRayon = rayon.querySelector('h2').textContent;
-        const produits = [];
-
-        rayon.querySelectorAll('.produit').forEach(produit => {
-            produits.push({
-                nom: produit.querySelector('.produit-nom').textContent,
-                coche: produit.querySelector('.produit-checkbox').checked
-            });
-        });
-
-        data.rayons.push({ nom: nomRayon, produits });
-    });
-
-    localStorage.setItem('listeCoursesData', JSON.stringify(data));
-}
-
-function loadFromLocalStorage() {
-    const saved = localStorage.getItem('listeCoursesData');
-    if (!saved) return;
-
-    const data = JSON.parse(saved);
-    rayonsContainer.innerHTML = '';
-
-    data.rayons.forEach(rayonData => {
-        const rayon = createRayon(rayonData.nom);
-        rayonsContainer.appendChild(rayon);
-
-        const produitsContainer = rayon.querySelector('.produits-container');
-
-        rayonData.produits.forEach(p => {
-            addProduit(produitsContainer, p.nom);
-            const produit = produitsContainer.lastElementChild;
-            const checkbox = produit.querySelector('.produit-checkbox');
-
-            checkbox.checked = p.coche;
-            if (p.coche) produit.classList.add('produit-coche');
-        });
-    });
-}
-
-document.addEventListener('DOMContentLoaded', loadFromLocalStorage);
-
-/* =============================
-   Gestion PWA - Service Worker
-============================= */
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker enregistré', reg))
-      .catch(err => console.log('Service Worker erreur', err));
+  btnDrag.addEventListener('mousedown', ()=>rayon.setAttribute('draggable','true'));
+  ['mouseup','mouseleave'].forEach(evt=>{
+    btnDrag.addEventListener(evt, ()=>rayon.removeAttribute('draggable'));
   });
 }
+
+/* --- PRODUIT --- */
+function addProduit(container, nom){
+  const p = document.createElement('div');
+  p.className='produit';
+  p.innerHTML = `
+    <input type="checkbox" class="produit-checkbox">
+    <span class="produit-nom">${nom}</span>
+    <div class="produit-actions">
+      <button class="btn-modifier-produit">🖋️</button>
+      <button class="btn-supprimer-produit">❌</button>
+    </div>
+  `;
+
+  const cb = p.querySelector('.produit-checkbox');
+  const btnSup = p.querySelector('.btn-supprimer-produit');
+  const btnMod = p.querySelector('.btn-modifier-produit');
+  const nomSpan = p.querySelector('.produit-nom');
+
+  p.addEventListener('click', e=>{
+    if(e.target.tagName==='BUTTON') return;
+    const actions = p.querySelector('.produit-actions');
+    actions.style.display = actions.style.display==='inline-block'?'none':'inline-block';
+  });
+
+  cb.addEventListener('change', ()=>{
+    if(cb.checked){ p.classList.add('produit-coche'); container.appendChild(p); }
+    else { p.classList.remove('produit-coche'); container.prepend(p); }
+    save();
+  });
+  btnSup.addEventListener('click', ()=>{ p.remove(); save(); });
+  btnMod.addEventListener('click', ()=>{
+    const nv = prompt("Nouveau nom:", nomSpan.textContent);
+    if(nv){ nomSpan.textContent = nv; save(); }
+  });
+
+  container.appendChild(p);
+}
+
+/* --- LOCALSTORAGE --- */
+function save(){
+  const data = [];
+  rayonsContainer.querySelectorAll('.rayon').forEach(rayon=>{
+    const nom = rayon.querySelector('h2').firstChild.textContent.trim();
+    const collapsed = rayon.classList.contains('collapsed');
+    const produits = [];
+    rayon.querySelectorAll('.produit').forEach(p=>{
+      produits.push({nom:p.querySelector('.produit-nom').textContent, coche:p.querySelector('.produit-checkbox').checked});
+    });
+    data.push({nom,collapsed,produits});
+  });
+  localStorage.setItem('listeCourses',JSON.stringify(data));
+}
+
+function load(){
+  const saved = localStorage.getItem('listeCourses');
+  if(!saved) return;
+  JSON.parse(saved).forEach(r=>{
+    const rayon = createRayon(r.nom);
+    if(r.collapsed) rayon.classList.add('collapsed');
+    const cont = rayon.querySelector('.produits-container');
+    r.produits.forEach(p=>{
+      addProduit(cont,p.nom);
+      const last = cont.lastChild;
+      const cb = last.querySelector('.produit-checkbox');
+      if(p.coche){ cb.checked=true; last.classList.add('produit-coche'); }
+    });
+    rayonsContainer.appendChild(rayon);
+  });
+}
+document.addEventListener('DOMContentLoaded', load);
+
+/* --- DRAG PC --- */
+rayonsContainer.addEventListener('dragover', e=>{
+  e.preventDefault();
+  const dragging = rayonsContainer.querySelector('.dragging');
+  const after = getAfterElement(rayonsContainer,e.clientY);
+  if(!after) rayonsContainer.appendChild(dragging);
+  else rayonsContainer.insertBefore(dragging,after);
+});
+function getAfterElement(container,y){
+  return [...container.querySelectorAll('.rayon:not(.dragging)')]
+    .reduce((closest,child)=>{
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height/2;
+      if(offset<0 && offset>closest.offset) return {offset,element:child};
+      return closest;
+    },{offset:Number.NEGATIVE_INFINITY}).element;
+}
+
+/* --- DRAG TACTILE MOBILE --- */
+function initTouchDrag(rayon){
+  const btn = rayon.querySelector('.btn-deplacer-rayon');
+  let isDragging = false;
+
+  btn.addEventListener('touchstart', e=>{
+    if(e.touches.length!==1) return;
+    isDragging = true;
+    rayon.classList.add('dragging');
+    e.preventDefault();
+  }, {passive:false});
+
+  btn.addEventListener('touchmove', e=>{
+    if(!isDragging) return;
+    const touchY = e.touches[0].clientY;
+    const after = getAfterElement(rayonsContainer,touchY);
+    if(!after) rayonsContainer.appendChild(rayon);
+    else rayonsContainer.insertBefore(rayon,after);
+    e.preventDefault();
+  }, {passive:false});
+
+  btn.addEventListener('touchend', ()=>{
+    if(!isDragging) return;
+    isDragging = false;
+    rayon.classList.remove('dragging');
+    save();
+  });
+}
+
+/* --- SERVICE WORKER UPDATE --- */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(reg => {
+      // Vérifier si un SW est en attente
+      if (reg.waiting) {
+        notifyUpdate();
+      }
+
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        newSW.addEventListener('statechange', () => {
+          if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+            notifyUpdate();
+          }
+        });
+      });
+    });
+}
+
+// Fonction pour notifier l’utilisateur
+function notifyUpdate() {
+  const updateDiv = document.createElement('div');
+  updateDiv.style.position = 'fixed';
+  updateDiv.style.bottom = '1rem';
+  updateDiv.style.left = '50%';
+  updateDiv.style.transform = 'translateX(-50%)';
+  updateDiv.style.background = '#333';
+  updateDiv.style.color = 'white';
+  updateDiv.style.padding = '0.5rem 1rem';
+  updateDiv.style.borderRadius = '5px';
+  updateDiv.style.cursor = 'pointer';
+  updateDiv.textContent = 'Nouvelle version disponible, cliquez pour recharger';
+  document.body.appendChild(updateDiv);
+
+  updateDiv.addEventListener('click', () => {
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage('skipWaiting');
+    }
+    window.location.reload();
+  });
+}
+/* --- FIN SCRIPT.JS --- */

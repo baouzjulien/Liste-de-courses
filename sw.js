@@ -1,21 +1,11 @@
-const CACHE_NAME = 'liste-courses-cache-v1';
-const urlsToCache = [
-  './',
-  './index.html',
-  './styles.css',
-  './script.js',
-  './icons/icon-192.png',
-  './icons/icon-512.png'
-];
-
-// Installation : cacher les fichiers
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting()) // active immédiatement
   );
 });
 
-// Activation : nettoyage ancien cache
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -24,13 +14,11 @@ self.addEventListener('activate', event => {
           if (key !== CACHE_NAME) return caches.delete(key);
         })
       )
-    )
+    ).then(() => self.clients.claim())
   );
 });
 
-// Interception des requêtes
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(resp => resp || fetch(event.request))
-  );
+// Envoyer un message au client quand une nouvelle version est prête
+self.addEventListener('message', event => {
+  if (event.data === 'skipWaiting') self.skipWaiting();
 });

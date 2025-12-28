@@ -1,5 +1,8 @@
-const CACHE_NAME = 'liste-courses-v1';
+const VERSION = '1.0.5';
+const CACHE_NAME = 'liste-courses-' + VERSION;
+
 const STATIC_ASSETS = [
+  './',
   './index.html',
   './styles.css',
   './script.js',
@@ -8,41 +11,28 @@ const STATIC_ASSETS = [
   './icons/icon-512.png'
 ];
 
-/* --- INSTALL --- */
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(STATIC_ASSETS))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
   );
 });
 
-/* --- ACTIVATE --- */
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) return caches.delete(key);
-        })
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
       )
-    ).then(() => self.clients.claim())
+    )
   );
 });
 
-/* --- FETCH --- */
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(cached => cached || fetch(event.request))
-      .catch(() => {
-        // fallback pour les pages HTML
-        if (event.request.destination === 'document') return caches.match('./index.html');
-      })
+    caches.match(event.request).then(res => res || fetch(event.request))
   );
 });
 
-/* --- MESSAGE --- */
 self.addEventListener('message', event => {
   if (event.data === 'skipWaiting') self.skipWaiting();
 });

@@ -36,6 +36,20 @@ function loadFromLocal() {
   return true;
 }
 
+/* --- LOAD GOOGLE SHEET --- */
+async function loadFromServer() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+
+    localData = data;           // stocke dans localData
+    rebuildDOM();               // rebuild DOM
+    updateLocalStorage();       // sauvegarde local et backup Sheet
+  } catch(err) {
+    console.error("Erreur load API :", err);
+  }
+}
+
 /* --- CREATE RAYON --- */
 function createRayon(nom, id=null, collapsed=false) {
   const rayon = document.createElement('div');
@@ -88,7 +102,7 @@ function initRayonActions(rayon) {
   btnMod.addEventListener('click', () => {
     const titre = rayon.querySelector('h2');
     const nv = prompt("Nouveau nom:", titre.textContent.trim());
-    if(nv) {
+    if(nv){
       titre.textContent = nv;
       const r = localData.find(r => r.id === rayon.dataset.id);
       if(r) r.nom = nv;
@@ -164,65 +178,20 @@ function addProduit(container, nom, id=null, coche=false) {
   container.appendChild(p);
 }
 
-/* --- DRAG PC --- */
-rayonsContainer.addEventListener('dragover', e => {
-  e.preventDefault();
-  const dragging = rayonsContainer.querySelector('.dragging');
-  const after = getAfterElement(rayonsContainer, e.clientY);
-  if(!after) rayonsContainer.appendChild(dragging);
-  else rayonsContainer.insertBefore(dragging, after);
-});
-
-function getAfterElement(container, y) {
-  return [...container.querySelectorAll('.rayon:not(.dragging)')]
-    .reduce((closest, child) => {
-      const box = child.getBoundingClientRect();
-      const offset = y - box.top - box.height/2;
-      if(offset < 0 && offset > closest.offset) return { offset, element: child };
-      return closest;
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-/* --- DRAG MOBILE --- */
-function initTouchDrag(rayon){
-  const btn = rayon.querySelector('.btn-deplacer-rayon');
-  let isDragging = false;
-
-  btn.addEventListener('touchstart', e=>{
-    if(e.touches.length!==1) return;
-    isDragging=true; rayon.classList.add('dragging'); e.preventDefault();
-  }, {passive:false});
-
-  btn.addEventListener('touchmove', e=>{
-    if(!isDragging) return;
-    const after = getAfterElement(rayonsContainer, e.touches[0].clientY);
-    if(!after) rayonsContainer.appendChild(rayon); else rayonsContainer.insertBefore(rayon, after);
-    e.preventDefault();
-  }, {passive:false});
-
-  btn.addEventListener('touchend', ()=>{
-    if(!isDragging) return;
-    isDragging=false;
-    rayon.classList.remove('dragging');
-    const idx = localData.findIndex(r=>r.id===rayon.dataset.id);
-    if(idx!==-1){
-      const newOrder = [...rayonsContainer.querySelectorAll('.rayon')].map(r=>r.dataset.id);
-      localData.sort((a,b)=>newOrder.indexOf(a.id)-newOrder.indexOf(b.id));
-      updateLocalStorage();
-    }
-  });
-}
-
 /* --- INIT --- */
-document.addEventListener('DOMContentLoaded', ()=>{
-  if(!loadFromLocal()) loadFromServer();
+document.addEventListener('DOMContentLoaded', () => {
+  if(!loadFromLocal()) loadFromServer(); // charge Sheet si localStorage vide
 });
 
-// Vérifie si le navigateur supporte les service workers
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('Service Worker enregistré', reg))
-      .catch(err => console.error('Erreur enregistrement SW', err));
-  });
-}
+/* --- AJOUT RAYON --- */
+ajouterRayonBtn.addEventListener('click', () => {
+  const nom = nomRayonInput.value.trim();
+  if(!nom) return;
+  const rayon = createRayon(nom);
+  rayonsContainer.appendChild(rayon);
+  nomRayonInput.value = '';
+  localData.push({ id: rayon.dataset.id, nom, collapsed: false, produits: [] });
+  updateLocalStorage();
+});
+
+nomRayonInput.addEventListener('keydown', e => { if(e.key === 'Enter') ajouterRayonBtn.click(); });

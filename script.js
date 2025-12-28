@@ -107,8 +107,7 @@ function addProduit(container, nom) {
     container.querySelectorAll('.produit-actions').forEach(act => {
       if (act !== p.querySelector('.produit-actions')) act.style.display = 'none';
     });
-    const actions = p.querySelector('.produit-actions');
-    actions.style.display = 'inline-block';
+    p.querySelector('.produit-actions').style.display = 'inline-block';
   });
 
   cb.addEventListener('change', () => {
@@ -126,7 +125,7 @@ function addProduit(container, nom) {
   container.appendChild(p);
 }
 
-/* --- SAVE / LOAD avec API --- */
+/* --- SAVE API --- */
 async function save() {
   const data = [];
   rayonsContainer.querySelectorAll('.rayon').forEach(rayon => {
@@ -144,27 +143,65 @@ async function save() {
   } catch(err) { console.error("Erreur save API :", err); }
 }
 
+/* --- LOAD API OPTIMISÉ --- */
 async function load() {
   try {
     const res = await fetch(API_URL);
     const data = await res.json();
-    rayonsContainer.innerHTML = '';
+
+    const activeInput = document.activeElement;
+    const activeValue = activeInput?.value;
+
+    const rayonsMap = {};
+    rayonsContainer.querySelectorAll('.rayon').forEach(r => rayonsMap[r.dataset.id] = r);
+
     data.forEach(r => {
-      const rayon = createRayon(r.nom);
-      rayon.dataset.id = r.id;
-      if (r.collapsed) rayon.classList.add('collapsed');
+      let rayon = rayonsMap[r.id];
+      if (!rayon) {
+        rayon = createRayon(r.nom);
+        rayon.dataset.id = r.id;
+        rayonsContainer.appendChild(rayon);
+      } else {
+        const h2 = rayon.querySelector('h2');
+        if (h2.firstChild.textContent.trim() !== r.nom) h2.firstChild.textContent = r.nom + ' ';
+      }
+
+      rayon.classList.toggle('collapsed', r.collapsed);
+
       const cont = rayon.querySelector('.produits-container');
+      const prodMap = {};
+      cont.querySelectorAll('.produit').forEach(p => prodMap[p.dataset.id] = p);
+
       r.produits.forEach(p => {
-        addProduit(cont, p.nom);
-        const last = cont.lastChild;
-        last.dataset.id = p.id;
-        const cb = last.querySelector('.produit-checkbox');
-        if (p.coche) { cb.checked = true; last.classList.add('produit-coche'); }
+        let prod = prodMap[p.id];
+        if (!prod) {
+          addProduit(cont, p.nom);
+          prod = cont.lastChild;
+          prod.dataset.id = p.id;
+        } else if (prod.querySelector('.produit-nom').textContent !== p.nom) {
+          prod.querySelector('.produit-nom').textContent = p.nom;
+        }
+
+        const cb = prod.querySelector('.produit-checkbox');
+        cb.checked = p.coche;
+        prod.classList.toggle('produit-coche', p.coche);
         cb.setAttribute('aria-checked', cb.checked);
       });
-      rayonsContainer.appendChild(rayon);
+
+      cont.querySelectorAll('.produit').forEach(p => {
+        if (!r.produits.find(x => x.id === p.dataset.id)) p.remove();
+      });
     });
-  } catch(err) { console.error("Erreur load API :", err); }
+
+    rayonsContainer.querySelectorAll('.rayon').forEach(r => {
+      if (!data.find(x => x.id === r.dataset.id)) r.remove();
+    });
+
+    if (activeInput && activeInput.classList.contains('nouveau-produit')) {
+      activeInput.focus();
+      activeInput.value = activeValue;
+    }
+  } catch (err) { console.error("Erreur load API :", err); }
 }
 
 /* --- LONG-POLLING SYNC --- */
@@ -178,11 +215,8 @@ async function syncLoop() {
       lastUpdate = timestamp;
       await load();
     }
-  } catch(err) {
-    console.error("Erreur sync :", err);
-  } finally {
-    setTimeout(syncLoop, 2000);
-  }
+  } catch(err) { console.error("Erreur sync :", err); }
+  finally { setTimeout(syncLoop, 2000); }
 }
 
 /* --- DRAG PC --- */
@@ -235,5 +269,5 @@ function initTouchDrag(rayon) {
 /* --- INIT --- */
 document.addEventListener('DOMContentLoaded', () => {
   load();
-  syncLoop(); // démarre le long-polling
+  syncLoop();
 });

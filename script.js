@@ -4,6 +4,9 @@ const rayonsContainer = document.getElementById('rayons-container');
 const ajouterRayonBtn = document.getElementById('btn-ajouter-rayon');
 const nomRayonInput = document.getElementById('nouveau-rayon');
 
+let localData = [];
+let lastUpdate = 0;
+
 /* --- AJOUT RAYON --- */
 ajouterRayonBtn.addEventListener('click', () => {
   const nom = nomRayonInput.value.trim();
@@ -11,10 +14,13 @@ ajouterRayonBtn.addEventListener('click', () => {
   const rayon = createRayon(nom);
   rayonsContainer.appendChild(rayon);
   nomRayonInput.value = '';
-  saveLocal();
-  saveServer();
+  updateLocalData();
 });
-nomRayonInput.addEventListener('keydown', e => { if(e.key==='Enter') ajouterRayonBtn.click(); });
+
+/* --- ENTER POUR AJOUTER --- */
+nomRayonInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') ajouterRayonBtn.click();
+});
 
 /* --- CREATE RAYON --- */
 function createRayon(nom) {
@@ -52,47 +58,42 @@ function initRayonActions(rayon) {
   const inputProd = rayon.querySelector('.nouveau-produit');
   const contProd = rayon.querySelector('.produits-container');
 
-  // Repli / dépli
   header.addEventListener('click', e => {
-    if(e.target.closest('button')) return;
+    if (e.target.closest('button')) return;
     rayon.classList.toggle('collapsed');
-    saveLocal();
-    saveServer();
+    updateLocalData();
   });
 
-  // Supprimer / modifier rayon
-  btnSup.addEventListener('click', () => { rayon.remove(); saveLocal(); saveServer(); });
+  btnSup.addEventListener('click', () => { rayon.remove(); updateLocalData(); });
   btnMod.addEventListener('click', () => {
     const titre = rayon.querySelector('h2');
-    const nv = prompt("Nouveau nom:", titre.firstChild.textContent.trim());
-    if(nv) { titre.firstChild.textContent = nv + ' '; saveLocal(); saveServer(); }
+    const nv = prompt("Nouveau nom:", titre.textContent.trim());
+    if (nv) { titre.textContent = nv; updateLocalData(); }
   });
 
-  // Ajouter produit
   inputProd.addEventListener('keydown', e => {
-    if(e.key==='Enter') {
+    if (e.key === 'Enter') {
       const val = inputProd.value.trim();
-      if(!val) return;
+      if (!val) return;
       addProduit(contProd, val);
       inputProd.value = '';
-      saveLocal();
-      saveServer();
+      updateLocalData();
     }
   });
 
-  // Drag PC
   rayon.addEventListener('dragstart', () => rayon.classList.add('dragging'));
-  rayon.addEventListener('dragend', () => { rayon.classList.remove('dragging'); saveLocal(); saveServer(); });
+  rayon.addEventListener('dragend', () => { rayon.classList.remove('dragging'); updateLocalData(); });
 
   btnDrag.addEventListener('mousedown', () => rayon.setAttribute('draggable', 'true'));
-  ['mouseup','mouseleave'].forEach(evt => btnDrag.addEventListener(evt, ()=>rayon.removeAttribute('draggable')));
+  ['mouseup','mouseleave'].forEach(evt => btnDrag.addEventListener(evt, () => rayon.removeAttribute('draggable')));
 }
 
 /* --- PRODUIT --- */
-function addProduit(container, nom) {
+function addProduit(container, nom, id=null, coche=false) {
   const p = document.createElement('div');
   p.className = 'produit';
-  p.dataset.id = crypto.randomUUID();
+  p.dataset.id = id || crypto.randomUUID();
+
   p.innerHTML = `
     <input type="checkbox" class="produit-checkbox" aria-label="Produit ${nom}">
     <span class="produit-nom">${nom}</span>
@@ -107,13 +108,15 @@ function addProduit(container, nom) {
   const btnMod = p.querySelector('.btn-modifier-produit');
   const nomSpan = p.querySelector('.produit-nom');
 
+  cb.checked = coche;
+  p.classList.toggle('produit-coche', coche);
   cb.setAttribute('aria-checked', cb.checked);
 
   p.addEventListener('click', e => {
-    if(e.target.closest('button')) return;
+    if (e.target.closest('button')) return;
     e.stopPropagation();
     container.querySelectorAll('.produit-actions').forEach(act => {
-      if(act !== p.querySelector('.produit-actions')) act.style.display = 'none';
+      if (act !== p.querySelector('.produit-actions')) act.style.display = 'none';
     });
     p.querySelector('.produit-actions').style.display = 'inline-block';
   });
@@ -122,23 +125,23 @@ function addProduit(container, nom) {
     cb.setAttribute('aria-checked', cb.checked);
     p.classList.toggle('produit-coche', cb.checked);
     if(cb.checked) container.appendChild(p); else container.prepend(p);
-    saveLocal(); saveServer();
+    updateLocalData();
   });
 
-  btnSup.addEventListener('click', () => { p.remove(); saveLocal(); saveServer(); });
+  btnSup.addEventListener('click', () => { p.remove(); updateLocalData(); });
   btnMod.addEventListener('click', () => {
     const nv = prompt("Nouveau nom:", nomSpan.textContent);
-    if(nv) { nomSpan.textContent = nv; saveLocal(); saveServer(); }
+    if (nv) { nomSpan.textContent = nv; updateLocalData(); }
   });
 
   container.appendChild(p);
 }
 
-/* --- LOCAL STORAGE --- */
-function saveLocal() {
-  const data = [];
+/* --- LOCALSTORAGE + API SYNC --- */
+function updateLocalData() {
+  localData = [];
   rayonsContainer.querySelectorAll('.rayon').forEach(rayon => {
-    const nom = rayon.querySelector('h2').firstChild.textContent.trim();
+    const nom = rayon.querySelector('h2').textContent.trim();
     const collapsed = rayon.classList.contains('collapsed');
     const produits = [];
     rayon.querySelectorAll('.produit').forEach(p => {
@@ -148,68 +151,122 @@ function saveLocal() {
         coche: p.querySelector('.produit-checkbox').checked
       });
     });
-    data.push({ id: rayon.dataset.id, nom, collapsed, produits });
+    localData.push({ id: rayon.dataset.id, nom, collapsed, produits });
   });
-  localStorage.setItem('listeCourses', JSON.stringify(data));
+
+  // sauvegarde locale instantanée
+  localStorage.setItem('listeCourses', JSON.stringify(localData));
+  // sync vers Google Sheet (async)
+  saveToServer(localData);
 }
 
-function loadLocal() {
+/* --- SAVE API --- */
+async function saveToServer(data) {
+  try {
+    await fetch(API_URL, { method: 'POST', body: JSON.stringify(data) });
+  } catch(err) { console.error("Erreur save API :", err); }
+}
+
+/* --- LOAD LOCAL STORAGE --- */
+function loadFromLocal() {
   const saved = localStorage.getItem('listeCourses');
-  if(!saved) return;
+  if (!saved) return false;
   const data = JSON.parse(saved);
+  rebuildFromData(data);
+  return true;
+}
+
+/* --- LOAD SERVER --- */
+async function loadFromServer() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    rebuildFromData(data);
+  } catch(err) { console.error("Erreur load API :", err); }
+}
+
+/* --- REBUILD DOM --- */
+function rebuildFromData(data) {
   rayonsContainer.innerHTML = "";
   data.forEach(r => {
     const rayon = createRayon(r.nom);
     rayon.dataset.id = r.id;
     rayon.classList.toggle('collapsed', r.collapsed);
+
     const cont = rayon.querySelector('.produits-container');
-    r.produits.forEach(p => {
-      addProduit(cont, p.nom);
-      const last = cont.lastChild;
-      last.dataset.id = p.id;
-      const cb = last.querySelector('.produit-checkbox');
-      cb.checked = p.coche;
-      last.classList.toggle('produit-coche', p.coche);
-      cb.setAttribute('aria-checked', cb.checked);
-    });
+    r.produits.forEach(p => addProduit(cont, p.nom, p.id, p.coche));
+
     rayonsContainer.appendChild(rayon);
   });
+  localData = data;
+  localStorage.setItem('listeCourses', JSON.stringify(localData));
 }
 
-/* --- API --- */
-async function saveServer() {
-  try { 
-    const data = JSON.parse(localStorage.getItem('listeCourses') || "[]");
-    await fetch(API_URL, { method:'POST', body: JSON.stringify(data) });
-  } catch(err){ console.error("Erreur save API:", err);}
-}
-
-/* --- SYNC --- */
+/* --- SYNC LONG-POLLING --- */
 async function syncLoop() {
   try {
     const res = await fetch(`${API_URL}?ping=1`);
     const data = await res.json();
     const timestamp = data.updated;
-    if(timestamp !== lastUpdate){
+    if(timestamp !== lastUpdate) {
       lastUpdate = timestamp;
-      loadServer();
+      await loadFromServer();
     }
-  } catch(err){ console.error("Erreur sync:", err);}
+  } catch(err) { console.error("Erreur sync :", err); }
   finally { setTimeout(syncLoop, 2000); }
 }
 
-async function loadServer() {
-  try {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-    localStorage.setItem('listeCourses', JSON.stringify(data));
-    loadLocal();
-  } catch(err){ console.error("Erreur load API:", err);}
+/* --- INIT DRAG PC --- */
+rayonsContainer.addEventListener('dragover', e => {
+  e.preventDefault();
+  const dragging = rayonsContainer.querySelector('.dragging');
+  const after = getAfterElement(rayonsContainer, e.clientY);
+  if (!after) rayonsContainer.appendChild(dragging);
+  else rayonsContainer.insertBefore(dragging, after);
+});
+
+function getAfterElement(container, y) {
+  return [...container.querySelectorAll('.rayon:not(.dragging)')]
+    .reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height/2;
+      if(offset < 0 && offset > closest.offset) return { offset, element: child };
+      return closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+/* --- INIT DRAG MOBILE --- */
+function initTouchDrag(rayon) {
+  const btn = rayon.querySelector('.btn-deplacer-rayon');
+  let isDragging = false;
+
+  btn.addEventListener('touchstart', e => {
+    if(e.touches.length !== 1) return;
+    isDragging = true;
+    rayon.classList.add('dragging');
+    e.preventDefault();
+  }, { passive:false });
+
+  btn.addEventListener('touchmove', e => {
+    if(!isDragging) return;
+    const touchY = e.touches[0].clientY;
+    const after = getAfterElement(rayonsContainer, touchY);
+    if(!after) rayonsContainer.appendChild(rayon);
+    else rayonsContainer.insertBefore(rayon, after);
+    e.preventDefault();
+  }, { passive:false });
+
+  btn.addEventListener('touchend', () => {
+    if(!isDragging) return;
+    isDragging = false;
+    rayon.classList.remove('dragging');
+    updateLocalData();
+  });
 }
 
 /* --- INIT --- */
-let lastUpdate = 0;
 document.addEventListener('DOMContentLoaded', () => {
-  loadLocal();   // Chargement local immédiat
-  syncLoop();    // Long-polling serveur
+  const loaded = loadFromLocal();
+  if(!loaded) loadFromServer();
+  syncLoop();
 });

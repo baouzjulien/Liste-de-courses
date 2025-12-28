@@ -1,39 +1,194 @@
-* { box-sizing: border-box; margin:0; padding:0; }
-body { font-family: Arial,sans-serif; background:#f4f4f4; color:#333; }
-.container { max-width:600px; margin:1rem auto; padding:1rem; background:#fff; border-radius:5px; }
-h1 { text-align:center; margin-bottom:1rem; padding:0.5rem; background:#828181; color:white; border-radius:5px; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-.add-rayon { display:flex; gap:0.5rem; margin-bottom:1rem; }
-.add-rayon input { flex:1; padding:0.3rem; }
-.add-rayon button { padding:0.3rem 0.6rem; cursor:pointer; }
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  color: #333;
+}
 
-.rayon { background:#fafafa; padding:1rem; margin-bottom:1rem; border-radius:5px; }
-.rayon.dragging { opacity:0.6; transform:scale(0.97); }
+.container {
+  max-width: 600px;
+  margin: 1rem auto;
+  padding: 1rem;
+  background: #fff;
+  border-radius: 5px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: #828181;
+  color: white;
+  border-radius: 5px;
+}
+
+/* --- AJOUT RAYON --- */
+.add-rayon {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.add-rayon input {
+  flex: 1;
+  padding: 0.3rem;
+}
+
+.add-rayon button {
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+
+/* --- RAYON --- */
+.rayon {
+  background: #f4f3f3;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border-radius: 5px;
+}
+
+.rayon.dragging {
+  opacity: 0.6;
+  transform: scale(0.97);
+}
+
 .rayon.collapsed .produits-container,
-.rayon.collapsed .rayon-footer { display:none; }
+.rayon.collapsed .rayon-footer {
+  display: none;
+}
 
-.rayon-header { display:flex; align-items:center; cursor:pointer; gap:0.5rem; }
-.rayon-header h2 { margin:0; display:flex; align-items:center; flex:1; }
-.rayon-header h2 .arrow { margin-left:0.5rem; font-size:1rem; transition: transform 0.2s; }
-.rayon.collapsed h2 .arrow { transform: rotate(-90deg); }
+.rayon-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
 
-.rayon-footer { display:flex; gap:0.5rem; margin-top:0.5rem; }
-.rayon-footer input { flex:1; padding:0.3rem; }
+.btn-deplacer-rayon {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  padding: 0;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  color: #b1b0b0;
+}
 
-.produits-container .produit { display:flex; align-items:center; padding:0.3rem 0; border-bottom:1px solid #eee; }
-.produit-nom { margin-left:5px; flex:1; }
-.produit-coche { text-decoration:line-through; opacity:0.5; }
+.btn-deplacer-rayon:active {
+  cursor: grabbing;
+}
 
-button { border:none; border-radius:4px; cursor:pointer; }
+.rayon-header h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 0.5rem;
+}
+
+.rayon-footer {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.rayon-footer input {
+  flex: 1;
+  padding: 0.3rem;
+}
+
+/* --- PRODUITS --- */
+.produit {
+  display: flex;
+  align-items: center;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid #dcdcdc;
+}
+
+.produit-nom {
+  margin-left: 5px;
+  flex: 1;
+}
+
+.produit-coche .produit-nom{
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.produits-container {
+  margin-top: 0.5rem;
+}
+
+/* --- BOUTONS --- */
+button {
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
 
 .rayon-actions button,
-.produit-actions button { display:none; }
+.produit-actions button {
+  display: none;
+  background-color: #f4f3f3;
+  margin: 0 2px; 
+  color: #666;
+}
 
+button,
+input {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+
+/* Checkbox */
+.produit-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #666;
+  border-radius: 4px;
+  background-color: #efefef;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* état coché */
+.produit-checkbox:checked {
+  background-color: #000; /* fond noir */
+  border-color: #000;
+}
+
+/* coche blanche */
+.produit-checkbox:checked::after {
+  content: "✓";
+  color: #fff;   /* coche blanche */
+  font-size: 14px;
+}
+
+
+/* Hover PC */
 .rayon:hover .rayon-actions button,
-.produit:hover .produit-actions button { display:inline-block; }
+.produit:hover .produit-actions button {
+  display: inline-block;
+}
 
-@media(max-width:430px){
-  .rayon-footer { flex-direction:column; }
-  .add-rayon { flex-direction:column; }
-  .add-rayon button { margin-left:0; }
+/* --- RESPONSIVE --- */
+@media (max-width: 430px) {
+  .rayon-footer {
+    flex-direction: column;
+  }
+
+  .add-rayon {
+    flex-direction: column;
+  }
 }

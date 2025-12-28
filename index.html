@@ -7,14 +7,25 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
   <div class="container">
     <h1>Liste de courses</h1>
+
+    <!-- Ajout rayon -->
     <div class="add-rayon">
-      <input type="text" id="nouveau-rayon" placeholder="Ajouter un rayon">
+      <input
+        type="text"
+        id="nouveau-rayon"
+        placeholder="Ajouter un rayon"
+        autocomplete="off"
+      >
       <button id="btn-ajouter-rayon">Ajouter</button>
     </div>
+
+    <!-- Rayons -->
     <div id="rayons-container"></div>
   </div>
+
   <script src="script.js"></script>
 </body>
 </html>

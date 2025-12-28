@@ -4,12 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Liste de courses</title>
-  <link rel="manifest" href="manifest.json">
+
+  <!-- Manifest -->
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#141414">
+
+  <!-- CSS -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
   <div class="container">
     <h1>Liste de courses</h1>
 
@@ -29,5 +32,16 @@
   </div>
 
   <script src="script.js"></script>
+
+  <!-- Service Worker registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker enregistré', reg))
+          .catch(err => console.error('Erreur enregistrement SW', err));
+      });
+    }
+  </script>
 </body>
 </html>

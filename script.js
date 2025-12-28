@@ -61,7 +61,6 @@ function initRayonActions(rayon) {
   header.addEventListener('click', e => {
     if (e.target.closest('button')) return;
     rayon.classList.toggle('collapsed');
-    // attendre que le DOM ait appliqué la classe
     requestAnimationFrame(updateLocalData);
   });
 
@@ -126,7 +125,7 @@ function addProduit(container, nom, id=null, coche=false) {
     cb.setAttribute('aria-checked', cb.checked);
     p.classList.toggle('produit-coche', cb.checked);
     if(cb.checked) container.appendChild(p); else container.prepend(p);
-    updateLocalData();
+    requestAnimationFrame(updateLocalData);
   });
 
   btnSup.addEventListener('click', () => { p.remove(); updateLocalData(); });
@@ -250,8 +249,7 @@ function initTouchDrag(rayon) {
     if(!isDragging) return;
     const touchY = e.touches[0].clientY;
     const after = getAfterElement(rayonsContainer, touchY);
-    if(!after) rayonsContainer.appendChild(rayon);
-    else rayonsContainer.insertBefore(rayon, after);
+    if(!after) rayonsContainer.appendChild(rayon); else rayonsContainer.insertBefore(rayon, after);
     e.preventDefault();
   }, { passive:false });
 
@@ -259,7 +257,7 @@ function initTouchDrag(rayon) {
     if(!isDragging) return;
     isDragging = false;
     rayon.classList.remove('dragging');
-    updateLocalData();
+    requestAnimationFrame(updateLocalData);
   });
 }
 

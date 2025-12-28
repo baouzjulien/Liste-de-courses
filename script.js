@@ -6,6 +6,13 @@ const nomRayonInput = document.getElementById('nouveau-rayon');
 
 let localData = [];
 let lastUpdate = 0;
+let saveTimeout;
+
+/* --- DEBOUNCE SAUVEGARDE --- */
+function scheduleUpdate() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(updateLocalData, 20);
+}
 
 /* --- AJOUT RAYON --- */
 ajouterRayonBtn.addEventListener('click', () => {
@@ -14,10 +21,9 @@ ajouterRayonBtn.addEventListener('click', () => {
   const rayon = createRayon(nom);
   rayonsContainer.appendChild(rayon);
   nomRayonInput.value = '';
-  updateLocalData();
+  scheduleUpdate();
 });
 
-/* --- ENTER POUR AJOUTER --- */
 nomRayonInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') ajouterRayonBtn.click();
 });
@@ -61,14 +67,14 @@ function initRayonActions(rayon) {
   header.addEventListener('click', e => {
     if (e.target.closest('button')) return;
     rayon.classList.toggle('collapsed');
-    requestAnimationFrame(updateLocalData);
+    scheduleUpdate();
   });
 
-  btnSup.addEventListener('click', () => { rayon.remove(); updateLocalData(); });
+  btnSup.addEventListener('click', () => { rayon.remove(); scheduleUpdate(); });
   btnMod.addEventListener('click', () => {
     const titre = rayon.querySelector('h2');
     const nv = prompt("Nouveau nom:", titre.textContent.trim());
-    if (nv) { titre.textContent = nv; updateLocalData(); }
+    if (nv) { titre.textContent = nv; scheduleUpdate(); }
   });
 
   inputProd.addEventListener('keydown', e => {
@@ -77,12 +83,12 @@ function initRayonActions(rayon) {
       if (!val) return;
       addProduit(contProd, val);
       inputProd.value = '';
-      updateLocalData();
+      scheduleUpdate();
     }
   });
 
   rayon.addEventListener('dragstart', () => rayon.classList.add('dragging'));
-  rayon.addEventListener('dragend', () => { rayon.classList.remove('dragging'); updateLocalData(); });
+  rayon.addEventListener('dragend', () => { rayon.classList.remove('dragging'); scheduleUpdate(); });
 
   btnDrag.addEventListener('mousedown', () => rayon.setAttribute('draggable', 'true'));
   ['mouseup','mouseleave'].forEach(evt => btnDrag.addEventListener(evt, () => rayon.removeAttribute('draggable')));
@@ -125,13 +131,13 @@ function addProduit(container, nom, id=null, coche=false) {
     cb.setAttribute('aria-checked', cb.checked);
     p.classList.toggle('produit-coche', cb.checked);
     if(cb.checked) container.appendChild(p); else container.prepend(p);
-    requestAnimationFrame(updateLocalData);
+    scheduleUpdate();
   });
 
-  btnSup.addEventListener('click', () => { p.remove(); updateLocalData(); });
+  btnSup.addEventListener('click', () => { p.remove(); scheduleUpdate(); });
   btnMod.addEventListener('click', () => {
     const nv = prompt("Nouveau nom:", nomSpan.textContent);
-    if (nv) { nomSpan.textContent = nv; updateLocalData(); }
+    if (nv) { nomSpan.textContent = nv; scheduleUpdate(); }
   });
 
   container.appendChild(p);
@@ -158,7 +164,6 @@ function updateLocalData() {
   saveToServer(localData);
 }
 
-/* --- SAVE API --- */
 async function saveToServer(data) {
   try {
     await fetch(API_URL, { method: 'POST', body: JSON.stringify(data) });
@@ -257,7 +262,7 @@ function initTouchDrag(rayon) {
     if(!isDragging) return;
     isDragging = false;
     rayon.classList.remove('dragging');
-    requestAnimationFrame(updateLocalData);
+    scheduleUpdate();
   });
 }
 

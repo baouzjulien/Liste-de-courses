@@ -13,7 +13,10 @@ ajouterRayonBtn.addEventListener('click', () => {
   nomRayonInput.value = '';
   save();
 });
-nomRayonInput.addEventListener('keydown', e => { if (e.key === 'Enter') ajouterRayonBtn.click(); });
+
+nomRayonInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') ajouterRayonBtn.click();
+});
 
 /* --- CREATE RAYON --- */
 function createRayon(nom) {
@@ -51,16 +54,25 @@ function initRayonActions(rayon) {
   const inputProd = rayon.querySelector('.nouveau-produit');
   const contProd = rayon.querySelector('.produits-container');
 
+  // 🔴 CORRECTION : sauvegarde obligatoire du collapsed
   header.addEventListener('click', e => {
     if (e.target.closest('button')) return;
     rayon.classList.toggle('collapsed');
+    save();
   });
 
-  btnSup.addEventListener('click', () => { rayon.remove(); save(); });
+  btnSup.addEventListener('click', () => {
+    rayon.remove();
+    save();
+  });
+
   btnMod.addEventListener('click', () => {
     const titre = rayon.querySelector('h2');
     const nv = prompt("Nouveau nom:", titre.firstChild.textContent.trim());
-    if (nv) { titre.firstChild.textContent = nv + ' '; save(); }
+    if (nv) {
+      titre.firstChild.textContent = nv + ' ';
+      save();
+    }
   });
 
   inputProd.addEventListener('keydown', e => {
@@ -74,10 +86,15 @@ function initRayonActions(rayon) {
   });
 
   rayon.addEventListener('dragstart', () => rayon.classList.add('dragging'));
-  rayon.addEventListener('dragend', () => { rayon.classList.remove('dragging'); save(); });
+  rayon.addEventListener('dragend', () => {
+    rayon.classList.remove('dragging');
+    save();
+  });
 
   btnDrag.addEventListener('mousedown', () => rayon.setAttribute('draggable', 'true'));
-  ['mouseup','mouseleave'].forEach(evt => btnDrag.addEventListener(evt, () => rayon.removeAttribute('draggable')));
+  ['mouseup', 'mouseleave'].forEach(evt =>
+    btnDrag.addEventListener(evt, () => rayon.removeAttribute('draggable'))
+  );
 }
 
 /* --- PRODUIT --- */
@@ -85,6 +102,7 @@ function addProduit(container, nom) {
   const p = document.createElement('div');
   p.className = 'produit';
   p.dataset.id = crypto.randomUUID();
+
   p.innerHTML = `
     <input type="checkbox" class="produit-checkbox" aria-label="Produit ${nom}">
     <span class="produit-nom">${nom}</span>
@@ -104,22 +122,27 @@ function addProduit(container, nom) {
   p.addEventListener('click', e => {
     if (e.target.closest('button')) return;
     e.stopPropagation();
-    container.querySelectorAll('.produit-actions').forEach(act => {
-      if (act !== p.querySelector('.produit-actions')) act.style.display = 'none';
-    });
+    container.querySelectorAll('.produit-actions').forEach(a => a.style.display = 'none');
     p.querySelector('.produit-actions').style.display = 'inline-block';
   });
 
   cb.addEventListener('change', () => {
     cb.setAttribute('aria-checked', cb.checked);
-    if (cb.checked) container.appendChild(p); else container.prepend(p);
+    cb.checked ? container.appendChild(p) : container.prepend(p);
     save();
   });
 
-  btnSup.addEventListener('click', () => { p.remove(); save(); });
+  btnSup.addEventListener('click', () => {
+    p.remove();
+    save();
+  });
+
   btnMod.addEventListener('click', () => {
     const nv = prompt("Nouveau nom:", nomSpan.textContent);
-    if (nv) { nomSpan.textContent = nv; save(); }
+    if (nv) {
+      nomSpan.textContent = nv;
+      save();
+    }
   });
 
   container.appendChild(p);
@@ -128,22 +151,31 @@ function addProduit(container, nom) {
 /* --- SAVE API --- */
 async function save() {
   const data = [];
+
   rayonsContainer.querySelectorAll('.rayon').forEach(rayon => {
     const nom = rayon.querySelector('h2').firstChild.textContent.trim();
     const collapsed = rayon.classList.contains('collapsed');
     const produits = [];
+
     rayon.querySelectorAll('.produit').forEach(p => {
-      produits.push({ id: p.dataset.id, nom: p.querySelector('.produit-nom').textContent, coche: p.querySelector('.produit-checkbox').checked });
+      produits.push({
+        id: p.dataset.id,
+        nom: p.querySelector('.produit-nom').textContent,
+        coche: p.querySelector('.produit-checkbox').checked
+      });
     });
+
     data.push({ id: rayon.dataset.id, nom, collapsed, produits });
   });
 
   try {
     await fetch(API_URL, { method: 'POST', body: JSON.stringify(data) });
-  } catch(err) { console.error("Erreur save API :", err); }
+  } catch (err) {
+    console.error("Erreur save API :", err);
+  }
 }
 
-/* --- LOAD API OPTIMISÉ --- */
+/* --- LOAD API --- */
 async function load() {
   try {
     const res = await fetch(API_URL);
@@ -161,11 +193,9 @@ async function load() {
         rayon = createRayon(r.nom);
         rayon.dataset.id = r.id;
         rayonsContainer.appendChild(rayon);
-      } else {
-        const h2 = rayon.querySelector('h2');
-        if (h2.firstChild.textContent.trim() !== r.nom) h2.firstChild.textContent = r.nom + ' ';
       }
 
+      rayon.querySelector('h2').firstChild.textContent = r.nom + ' ';
       rayon.classList.toggle('collapsed', r.collapsed);
 
       const cont = rayon.querySelector('.produits-container');
@@ -178,10 +208,9 @@ async function load() {
           addProduit(cont, p.nom);
           prod = cont.lastChild;
           prod.dataset.id = p.id;
-        } else if (prod.querySelector('.produit-nom').textContent !== p.nom) {
-          prod.querySelector('.produit-nom').textContent = p.nom;
         }
 
+        prod.querySelector('.produit-nom').textContent = p.nom;
         const cb = prod.querySelector('.produit-checkbox');
         cb.checked = p.coche;
         prod.classList.toggle('produit-coche', p.coche);
@@ -197,26 +226,31 @@ async function load() {
       if (!data.find(x => x.id === r.dataset.id)) r.remove();
     });
 
-    if (activeInput && activeInput.classList.contains('nouveau-produit')) {
+    if (activeInput?.classList.contains('nouveau-produit')) {
       activeInput.focus();
       activeInput.value = activeValue;
     }
-  } catch (err) { console.error("Erreur load API :", err); }
+  } catch (err) {
+    console.error("Erreur load API :", err);
+  }
 }
 
-/* --- LONG-POLLING SYNC --- */
+/* --- SYNC LOOP --- */
 let lastUpdate = 0;
+
 async function syncLoop() {
   try {
     const res = await fetch(`${API_URL}?ping=1`);
-    const data = await res.json();
-    const timestamp = data.updated;
-    if(timestamp !== lastUpdate) {
-      lastUpdate = timestamp;
+    const { updated } = await res.json();
+    if (updated !== lastUpdate) {
+      lastUpdate = updated;
       await load();
     }
-  } catch(err) { console.error("Erreur sync :", err); }
-  finally { setTimeout(syncLoop, 2000); }
+  } catch (err) {
+    console.error("Erreur sync :", err);
+  } finally {
+    setTimeout(syncLoop, 2000);
+  }
 }
 
 /* --- DRAG PC --- */
@@ -224,43 +258,40 @@ rayonsContainer.addEventListener('dragover', e => {
   e.preventDefault();
   const dragging = rayonsContainer.querySelector('.dragging');
   const after = getAfterElement(rayonsContainer, e.clientY);
-  if (!after) rayonsContainer.appendChild(dragging);
-  else rayonsContainer.insertBefore(dragging, after);
+  after ? rayonsContainer.insertBefore(dragging, after) : rayonsContainer.appendChild(dragging);
 });
+
 function getAfterElement(container, y) {
   return [...container.querySelectorAll('.rayon:not(.dragging)')]
     .reduce((closest, child) => {
       const box = child.getBoundingClientRect();
-      const offset = y - box.top - box.height/2;
+      const offset = y - box.top - box.height / 2;
       if (offset < 0 && offset > closest.offset) return { offset, element: child };
       return closest;
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }, { offset: -Infinity }).element;
 }
 
-/* --- DRAG TACTILE MOBILE --- */
+/* --- DRAG TACTILE --- */
 function initTouchDrag(rayon) {
   const btn = rayon.querySelector('.btn-deplacer-rayon');
-  let isDragging = false;
+  let dragging = false;
 
   btn.addEventListener('touchstart', e => {
-    if (e.touches.length !== 1) return;
-    isDragging = true;
+    dragging = true;
     rayon.classList.add('dragging');
     e.preventDefault();
-  }, { passive:false });
+  }, { passive: false });
 
   btn.addEventListener('touchmove', e => {
-    if (!isDragging) return;
-    const touchY = e.touches[0].clientY;
-    const after = getAfterElement(rayonsContainer, touchY);
-    if (!after) rayonsContainer.appendChild(rayon);
-    else rayonsContainer.insertBefore(rayon, after);
+    if (!dragging) return;
+    const y = e.touches[0].clientY;
+    const after = getAfterElement(rayonsContainer, y);
+    after ? rayonsContainer.insertBefore(rayon, after) : rayonsContainer.appendChild(rayon);
     e.preventDefault();
-  }, { passive:false });
+  }, { passive: false });
 
   btn.addEventListener('touchend', () => {
-    if (!isDragging) return;
-    isDragging = false;
+    dragging = false;
     rayon.classList.remove('dragging');
     save();
   });

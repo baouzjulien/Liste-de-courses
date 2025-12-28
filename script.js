@@ -6,12 +6,16 @@ const nomRayonInput = document.getElementById('nouveau-rayon');
 
 let localData = [];
 let lastUpdate = 0;
-let saveTimeout;
+let pendingUpdate = false;
 
-/* --- DEBOUNCE SAUVEGARDE --- */
+/* --- DEBOUNCE UPDATE --- */
 function scheduleUpdate() {
-  clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(updateLocalData, 20);
+  if (pendingUpdate) return;
+  pendingUpdate = true;
+  requestAnimationFrame(() => {
+    updateLocalData();
+    pendingUpdate = false;
+  });
 }
 
 /* --- AJOUT RAYON --- */
@@ -23,10 +27,7 @@ ajouterRayonBtn.addEventListener('click', () => {
   nomRayonInput.value = '';
   scheduleUpdate();
 });
-
-nomRayonInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') ajouterRayonBtn.click();
-});
+nomRayonInput.addEventListener('keydown', e => { if (e.key === 'Enter') ajouterRayonBtn.click(); });
 
 /* --- CREATE RAYON --- */
 function createRayon(nom) {
@@ -164,13 +165,14 @@ function updateLocalData() {
   saveToServer(localData);
 }
 
+/* --- SAVE API --- */
 async function saveToServer(data) {
   try {
     await fetch(API_URL, { method: 'POST', body: JSON.stringify(data) });
   } catch(err) { console.error("Erreur save API :", err); }
 }
 
-/* --- LOAD LOCAL STORAGE --- */
+/* --- LOAD LOCAL --- */
 function loadFromLocal() {
   const saved = localStorage.getItem('listeCourses');
   if (!saved) return false;
@@ -219,7 +221,7 @@ async function syncLoop() {
   finally { setTimeout(syncLoop, 2000); }
 }
 
-/* --- INIT DRAG PC --- */
+/* --- DRAG PC --- */
 rayonsContainer.addEventListener('dragover', e => {
   e.preventDefault();
   const dragging = rayonsContainer.querySelector('.dragging');
@@ -227,7 +229,6 @@ rayonsContainer.addEventListener('dragover', e => {
   if (!after) rayonsContainer.appendChild(dragging);
   else rayonsContainer.insertBefore(dragging, after);
 });
-
 function getAfterElement(container, y) {
   return [...container.querySelectorAll('.rayon:not(.dragging)')]
     .reduce((closest, child) => {
@@ -238,7 +239,7 @@ function getAfterElement(container, y) {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-/* --- INIT DRAG MOBILE --- */
+/* --- DRAG MOBILE --- */
 function initTouchDrag(rayon) {
   const btn = rayon.querySelector('.btn-deplacer-rayon');
   let isDragging = false;

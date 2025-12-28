@@ -217,3 +217,12 @@ function initTouchDrag(rayon){
 document.addEventListener('DOMContentLoaded', ()=>{
   if(!loadFromLocal()) loadFromServer();
 });
+
+// Vérifie si le navigateur supporte les service workers
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('Service Worker enregistré', reg))
+      .catch(err => console.error('Erreur enregistrement SW', err));
+  });
+}

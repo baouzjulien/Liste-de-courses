@@ -20,10 +20,13 @@ async function saveToServer(data) {
 function rebuildDOM() {
   rayonsContainer.innerHTML = "";
   localData.forEach(r => {
-    const rayon = createRayon(r.nom, r.id, r.collapsed);
-    const cont = rayon.querySelector('.produits-container');
-    r.produits.forEach(p => addProduit(cont, p.nom, p.id, p.coche));
-    rayonsContainer.appendChild(rayon);
+  const rayon = createRayon(r.nom, r.id, r.collapsed);
+  const cont = rayon.querySelector('.produits-container');
+  r.produits
+  .slice()
+  .sort((a, b) => a.coche - b.coche) // décochés (false=0) en haut
+  .forEach(p => addProduit(cont, p.nom, p.id, p.coche));
+  rayonsContainer.appendChild(rayon);
   });
 }
 
@@ -31,9 +34,9 @@ function rebuildDOM() {
 function loadFromLocal() {
   const saved = localStorage.getItem('listeCourses');
   if (!saved) return false;
-  localData = JSON.parse(saved);
-  rebuildDOM();
-  return true;
+    localData = JSON.parse(saved);
+    rebuildDOM();
+    return true;
 }
 
 /* --- LOAD SERVER --- */
@@ -148,7 +151,6 @@ function addProduit(container, nom, id=null, coche=false) {
         p.classList.toggle('produit-coche', cb.checked);
       }
     }
-    if(cb.checked) container.appendChild(p); else container.prepend(p);
     updateLocalStorage();
   });
 

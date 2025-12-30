@@ -213,13 +213,14 @@ function addProduit(container, nom, id=null, coche=false) {
 /* =================================================
    DRAG & DROP (PC)
 ================================================= */
+// Gestion du dragstart / dragend
 rayonsContainer.addEventListener('dragstart', e => {
   e.target.classList.add('dragging');
 });
 rayonsContainer.addEventListener('dragend', e => {
   e.target.classList.remove('dragging');
 });
-
+// Gestion du dragover pour le repositionnement
 rayonsContainer.addEventListener('dragover', e => {
   e.preventDefault();
   const dragging = rayonsContainer.querySelector('.dragging');
@@ -227,7 +228,7 @@ rayonsContainer.addEventListener('dragover', e => {
   if(!after) rayonsContainer.appendChild(dragging);
   else rayonsContainer.insertBefore(dragging, after);
 });
-
+// Détermine l’élément après lequel insérer pendant le drag
 function getAfterElement(container, y) {
   return [...container.querySelectorAll('.rayon:not(.dragging)')]
     .reduce((closest, child) => {
@@ -237,19 +238,32 @@ function getAfterElement(container, y) {
       return closest;
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
+//
+rayonsContainer.addEventListener('dragend', e => {
+  e.target.classList.remove('dragging');
+
+  // Mise à jour de l'ordre dans localData (comme pour mobile)
+  const idx = localData.findIndex(r => r.id === e.target.dataset.id);
+  if(idx !== -1){
+    const newOrder = [...rayonsContainer.querySelectorAll('.rayon')].map(r => r.dataset.id);
+    localData.sort((a,b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+    updateLocalStorage();
+  }
+});
 
 /* =================================================
    DRAG MOBILE / TOUCH
 ================================================= */
+// Initialisation du drag par touch sur un rayon
 function initTouchDrag(rayon){
   const btn = rayon.querySelector('.btn-deplacer-rayon');
   let isDragging = false;
-
+// Touch start
   btn.addEventListener('touchstart', e=>{
     if(e.touches.length!==1) return;
     isDragging=true; rayon.classList.add('dragging'); e.preventDefault();
   }, {passive:false});
-
+// Touch move
   btn.addEventListener('touchmove', e=>{
     if(!isDragging) return;
     const after = getAfterElement(rayonsContainer, e.touches[0].clientY);
@@ -257,13 +271,13 @@ function initTouchDrag(rayon){
     else rayonsContainer.insertBefore(rayon, after);
     e.preventDefault();
   }, {passive:false});
-
+// Touch end
   btn.addEventListener('touchend', ()=>{
     if(!isDragging) return;
     isDragging=false;
     rayon.classList.remove('dragging');
 
-    // Sauvegarde nouvel ordre
+    // Mise à jour de l'ordre dans localData (comme pour PC)
     const idx = localData.findIndex(r=>r.id===rayon.dataset.id);
     if(idx!==-1){
       const newOrder = [...rayonsContainer.querySelectorAll('.rayon')].map(r=>r.dataset.id);

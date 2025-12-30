@@ -194,20 +194,19 @@ function addProduit(container, nom, id=null, coche=false){
         prod.coche = cb.checked;
         p.classList.toggle('produit-coche', cb.checked);
       }
-    // Réordonne uniquement le DOM des produits de ce rayon
-    const contProd = p.closest('.produits-container');
-    // On extrait les produits DOM et trie selon l'état coche
-    const produitsDOM = [...contProd.children];
-    produitsDOM.sort((a,b)=>{
-      const aCoche = a.querySelector('.produit-checkbox').checked;
-      const bCoche = b.querySelector('.produit-checkbox').checked;
-      return aCoche - bCoche; // décochés en haut
+    // Réordonne uniquement les produits dans ce rayon
+    const contProd = rayonEl.querySelector('.produits-container');
+
+    // Trie localData pour refléter le nouvel ordre
+    r.produits.sort((a, b) => a.coche - b.coche);
+
+    // Reconstruit le DOM des produits dans l’ordre
+    r.produits.forEach(pObj => {
+      const prodEl = contProd.querySelector(`.produit[data-id="${pObj.id}"]`);
+      if (prodEl) contProd.appendChild(prodEl);
     });
-    // On rattache dans le nouvel ordre
-    produitsDOM.forEach(el => contProd.appendChild(el));
   }
 
-  // Sauvegarde
   updateLocalStorage();
   });
 

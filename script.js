@@ -192,6 +192,8 @@ function addProduit(container, nom, id=null, coche=false){
   if (r) {
     const prod = r.produits.find(x => x.id === p.dataset.id);
     if (prod) prod.coche = cb.checked;
+    p.classList.toggle('produit-coche', cb.checked);
+    cb.setAttribute('aria-checked', cb.checked);
     
     // Trie le tableau local
     r.produits.sort((a, b) => a.coche - b.coche);

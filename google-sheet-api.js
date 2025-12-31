@@ -46,6 +46,7 @@ function getData() {
   if (!rayonsSheet || !produitsSheet) return [];
 
   const rayonsData = rayonsSheet
+  // -1 to avoid errors when the sheet is empty
     .getRange(2, 1, Math.max(rayonsSheet.getLastRow() - 1, 0), 3)
     .getValues();
 

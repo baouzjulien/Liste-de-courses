@@ -1,6 +1,5 @@
 /* =================================================
    BASE / RESET
-   Règles globales appliquées à tout le document
 ================================================= */
 * {
   box-sizing: border-box;
@@ -148,6 +147,7 @@ h1 {
   align-items: center;
   padding: 0.3rem 0;
   border-bottom: 1px solid #dcdcdc;
+  gap: 0.3rem;
 }
 
 .produits-container {
@@ -155,8 +155,13 @@ h1 {
 }
 
 .produit-nom {
-  margin-left: 5px;
   flex: 1;
+  cursor: text;
+}
+
+.produit-nom[contenteditable]:focus {
+  outline: 1px solid #888;
+  background: #fefefe;
 }
 
 /* --- États du produit --- */
@@ -175,11 +180,30 @@ input.nouveau-produit {
 
 /* Actions produit */
 .produit-actions button {
-  display: none;
-  background-color: #f4f3f3;
-  margin: 0 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-weight: bold;
+  background: #f4f3f3;
   color: #666;
-  font-size: 1rem;
+  font-size: 12px;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Croix de suppression personnalisée */
+.btn-supprimer-produit::before {
+  content: '';
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-left: 2px solid #666;
+  border-bottom: 2px solid #666;
+  transform: rotate(45deg);
+  margin: auto;
 }
 
 /* =================================================

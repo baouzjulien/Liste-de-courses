@@ -79,7 +79,6 @@ input, button {
 }
 
 /* Collapse */
-/* Collapse */
 .rayon.collapsed .produits-container,
 .rayon.collapsed .rayon-footer {
   display: none;
@@ -173,7 +172,7 @@ input, button {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 18px;      /* légèrement plus grand */
+  width: 18px;
   height: 2px;
   background: #666;
 }

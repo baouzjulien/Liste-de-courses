@@ -438,42 +438,106 @@ nomRayonInput.addEventListener('keydown', e=>{
   if(e.key==='Enter') ajouterRayonBtn.click();
 });
 
-/* =================================================
-   POLLING POUR SYNCHRO TEMPS RÉEL (sans bloquer la saisie)
+//* =================================================
+   POLLING NON DESTRUCTIF POUR SYNCHRO TEMPS RÉEL
 ================================================= */
 async function pollServerData() {
   try {
     const res = await fetch(API_URL);
     const serverData = await res.json();
 
-    if (JSON.stringify(serverData) !== JSON.stringify(localData)) {
+    // Identifier les éléments en cours d'édition pour ne pas les écraser
+    const editingRayons = new Set([...document.querySelectorAll('h2[contenteditable="true"]')]
+      .map(el => el.closest('.rayon').dataset.id));
+    const editingProduits = new Set([...document.querySelectorAll('.produit-nom[contenteditable="true"]')]
+      .map(el => el.closest('.produit').dataset.id));
 
-      const editingRayons = [...document.querySelectorAll('h2[contenteditable="true"]')]
-        .map(el => el.closest('.rayon').dataset.id);
+    // --- TRAITEMENT DES RAYONS ---
+    const localIds = new Set(localData.map(r => r.id));
+    const serverIds = new Set(serverData.map(r => r.id));
 
-      const editingProduits = [...document.querySelectorAll('.produit-nom[contenteditable="true"]')]
-        .map(el => el.closest('.produit').dataset.id);
+    // 1️⃣ Supprimer les rayons supprimés côté serveur
+    localData.forEach(r => {
+      if (!serverIds.has(r.id)) {
+        const rayonEl = rayonsContainer.querySelector(`.rayon[data-id="${r.id}"]`);
+        if (rayonEl) rayonEl.remove();
+      }
+    });
+    localData = localData.filter(r => serverIds.has(r.id));
 
-      localData = serverData.map(r => {
-        const localR = localData.find(lr => lr.id === r.id) || r;
+    // 2️⃣ Ajouter ou mettre à jour les rayons
+    serverData.forEach(rServer => {
+      let rLocal = localData.find(r => r.id === rServer.id);
 
-        if (editingRayons.includes(r.id)) r.nom = localR.nom;
+      if (!rLocal) {
+        // Nouveau rayon : créer DOM et ajouter
+        localData.push(rServer);
+        rayonsContainer.appendChild(createRayon(rServer.nom, rServer.id, rServer.collapsed));
+      } else {
+        // Rayon existant : mettre à jour nom si pas en édition
+        if (!editingRayons.has(rServer.id) && rLocal.nom !== rServer.nom) {
+          rLocal.nom = rServer.nom;
+          const h2 = rayonsContainer.querySelector(`.rayon[data-id="${rServer.id}"] h2`);
+          if (h2) h2.textContent = rServer.nom;
+        }
+        // Mettre à jour collapsed si pas en cours de manipulation
+        const rayonEl = rayonsContainer.querySelector(`.rayon[data-id="${rServer.id}"]`);
+        if (rayonEl && !editingRayons.has(rServer.id)) {
+          if (rServer.collapsed) rayonEl.classList.add('collapsed');
+          else rayonEl.classList.remove('collapsed');
+        }
+      }
 
-        r.produits = r.produits.map(p => {
-          const localP = (localR.produits || []).find(lp => lp.id === p.id) || p;
-          if (editingProduits.includes(p.id)) p.nom = localP.nom;
-          return p;
-        });
+      // --- TRAITEMENT DES PRODUITS ---
+      const rEl = rayonsContainer.querySelector(`.rayon[data-id="${rServer.id}"]`);
+      if (!rEl) return;
+      const cont = rEl.querySelector('.produits-container');
 
-        return r;
+      const localProds = rLocal ? rLocal.produits : [];
+      const localProdIds = new Set(localProds.map(p => p.id));
+      const serverProdIds = new Set(rServer.produits.map(p => p.id));
+
+      // a) Supprimer produits supprimés côté serveur
+      localProds.forEach(p => {
+        if (!serverProdIds.has(p.id)) {
+          const pEl = cont.querySelector(`.produit[data-id="${p.id}"]`);
+          if (pEl) pEl.remove();
+        }
       });
+      if (rLocal) rLocal.produits = localProds.filter(p => serverProdIds.has(p.id));
 
-      rebuildDOM();
-      updateLocalStorage();
-    }
+      // b) Ajouter ou mettre à jour produits
+      rServer.produits.forEach(pServer => {
+        let pLocal = rLocal ? rLocal.produits.find(p => p.id === pServer.id) : null;
+
+        if (!pLocal) {
+          // Nouveau produit
+          if (rLocal) rLocal.produits.push(pServer);
+          addProduit(cont, pServer.nom, pServer.id, pServer.coche);
+        } else {
+          // Produit existant : mettre à jour nom ou état coché si pas en édition
+          if (!editingProduits.has(pServer.id)) {
+            pLocal.nom = pServer.nom;
+            pLocal.coche = pServer.coche;
+            const pEl = cont.querySelector(`.produit[data-id="${pServer.id}"]`);
+            if (pEl) {
+              pEl.querySelector('.produit-nom').textContent = pServer.nom;
+              const cb = pEl.querySelector('.produit-checkbox');
+              cb.checked = pServer.coche;
+              pEl.classList.toggle('produit-coche', pServer.coche);
+            }
+          }
+        }
+      });
+    });
+
+    updateLocalStorage();
+
   } catch (err) {
     console.error("Erreur poll API :", err);
   }
 }
 
+// Lancer le polling toutes les 3 secondes
 setInterval(pollServerData, 3000);
+

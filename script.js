@@ -438,7 +438,7 @@ nomRayonInput.addEventListener('keydown', e=>{
   if(e.key==='Enter') ajouterRayonBtn.click();
 });
 
-//* =================================================
+/* =================================================
    POLLING NON DESTRUCTIF POUR SYNCHRO TEMPS RÉEL
 ================================================= */
 async function pollServerData() {

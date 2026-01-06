@@ -404,12 +404,10 @@ function initTouchDrag(rayon){
    INTERACTIONS GLOBALES (clic en dehors pour masquer les croix)
 ================================================= */
 document.addEventListener('click', e => {
-  // Masquer croix rayons
   document.querySelectorAll('.rayon-actions.show').forEach(btns => {
     const rayon = btns.closest('.rayon');
     if (!rayon.contains(e.target)) btns.classList.remove('show');
   });
-  // Masquer croix produits
   document.querySelectorAll('.produit-actions.show').forEach(btns => {
     const produit = btns.closest('.produit');
     if (!produit.contains(e.target)) btns.classList.remove('show');
@@ -439,3 +437,43 @@ ajouterRayonBtn.addEventListener('click', ()=>{
 nomRayonInput.addEventListener('keydown', e=>{
   if(e.key==='Enter') ajouterRayonBtn.click();
 });
+
+/* =================================================
+   POLLING POUR SYNCHRO TEMPS RÉEL (sans bloquer la saisie)
+================================================= */
+async function pollServerData() {
+  try {
+    const res = await fetch(API_URL);
+    const serverData = await res.json();
+
+    if (JSON.stringify(serverData) !== JSON.stringify(localData)) {
+
+      const editingRayons = [...document.querySelectorAll('h2[contenteditable="true"]')]
+        .map(el => el.closest('.rayon').dataset.id);
+
+      const editingProduits = [...document.querySelectorAll('.produit-nom[contenteditable="true"]')]
+        .map(el => el.closest('.produit').dataset.id);
+
+      localData = serverData.map(r => {
+        const localR = localData.find(lr => lr.id === r.id) || r;
+
+        if (editingRayons.includes(r.id)) r.nom = localR.nom;
+
+        r.produits = r.produits.map(p => {
+          const localP = (localR.produits || []).find(lp => lp.id === p.id) || p;
+          if (editingProduits.includes(p.id)) p.nom = localP.nom;
+          return p;
+        });
+
+        return r;
+      });
+
+      rebuildDOM();
+      updateLocalStorage();
+    }
+  } catch (err) {
+    console.error("Erreur poll API :", err);
+  }
+}
+
+setInterval(pollServerData, 3000);

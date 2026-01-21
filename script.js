@@ -109,16 +109,23 @@ function loadFromLocal() {
 }
 
 async function loadFromServer() {
+  showLoader();
+  const start = performance.now();
+
+  await new Promise(requestAnimationFrame);
+
   try {
-    showLoader();
     const res = await fetch(API_URL);
     localData = await res.json();
     rebuildDOM();
     updateLocalStorage();
   } catch (err) {
-    console.error("Erreur load API :", err);
+    console.error(err);
   } finally {
-    hideLoader();
+    const elapsed = performance.now() - start;
+    const minVisible = 400;
+
+    setTimeout(hideLoader, Math.max(0, minVisible - elapsed));
   }
 }
 

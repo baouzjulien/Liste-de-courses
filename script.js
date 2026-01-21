@@ -5,7 +5,6 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyt1rnaburyDKblXGC0BUKh
 const rayonsContainer = document.getElementById('rayons-container');
 const ajouterRayonBtn = document.getElementById('btn-ajouter-rayon');
 const nomRayonInput = document.getElementById('nouveau-rayon');
-const loader = document.getElementById('loader');
 
 let localData = [];
 
@@ -25,11 +24,11 @@ function normalize(str) {
 }
 
 function showLoader() {
-  loader.classList.remove('hidden');
+  document.getElementById('loader')?.classList.remove('hidden');
 }
 
 function hideLoader() {
-  loader.classList.add('hidden');
+  document.getElementById('loader')?.classList.add('hidden');
 }
 
 /* =================================================

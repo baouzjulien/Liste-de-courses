@@ -5,6 +5,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyt1rnaburyDKblXGC0BUKh
 const rayonsContainer = document.getElementById('rayons-container');
 const ajouterRayonBtn = document.getElementById('btn-ajouter-rayon');
 const nomRayonInput = document.getElementById('nouveau-rayon');
+const loader = document.getElementById('loader');
 
 let localData = [];
 
@@ -21,6 +22,14 @@ function debounce(fn, delay = 200) {
 
 function normalize(str) {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function showLoader() {
+  loader.classList.remove('hidden');
+}
+
+function hideLoader() {
+  loader.classList.add('hidden');
 }
 
 /* =================================================
@@ -101,12 +110,15 @@ function loadFromLocal() {
 
 async function loadFromServer() {
   try {
+    showLoader();
     const res = await fetch(API_URL);
     localData = await res.json();
     rebuildDOM();
     updateLocalStorage();
   } catch (err) {
     console.error("Erreur load API :", err);
+  } finally {
+    hideLoader();
   }
 }
 

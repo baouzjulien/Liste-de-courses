@@ -6,6 +6,7 @@ const rayonsContainer = document.getElementById('rayons-container');
 const ajouterRayonBtn = document.getElementById('btn-ajouter-rayon');
 const nomRayonInput = document.getElementById('nouveau-rayon');
 const loader = document.getElementById('loader');
+const icone = document.getElementById('actu-ico');
 
 let localData = [];
 
@@ -128,6 +129,20 @@ async function loadFromServer() {
     setTimeout(hideLoader, Math.max(0, minVisible - elapsed));
   }
 }
+
+// Actualisation via icone
+icone.addEventListener('click', async () => {
+  icone.classList.add('spin');
+try {
+    await loadFromServer();
+  } finally {
+    // Retirer la classe après la fin de l'animation
+    icone.addEventListener('animationend', () => {
+      icone.classList.remove('spin');
+    }, { once: true });
+  }
+});
+
 
 /* =================================================
    COMPOSANT RAYON

@@ -227,7 +227,7 @@ input, button {
   z-index: 999;
 }
 
-.loader.hidden {
+.loader {
   display: none;
 }
 

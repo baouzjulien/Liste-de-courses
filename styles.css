@@ -227,7 +227,7 @@ input, button {
   z-index: 999;
 }
 
-.loader {
+.loader.hidden {
   display: none;
 }
 
@@ -250,3 +250,6 @@ input, button {
   color: #333;
 }
 
+body {
+  background: red !important;
+}

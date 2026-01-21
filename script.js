@@ -132,15 +132,15 @@ async function loadFromServer() {
 
 // Actualisation via icone
 icone.addEventListener('click', async () => {
+  icone.classList.remove('spin');
+  icone.offsetWidth; // force reset animation
   icone.classList.add('spin');
-try {
-    await loadFromServer();
-  } finally {
-    // Retirer la classe après la fin de l'animation
-    icone.addEventListener('animationend', () => {
-      icone.classList.remove('spin');
-    }, { once: true });
-  }
+
+  setTimeout(() => {
+    icone.classList.remove('spin');
+  }, 500);
+
+  await loadFromServer();
 });
 
 
